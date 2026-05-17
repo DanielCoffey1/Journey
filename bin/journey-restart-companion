@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=restart companion
+# journey:summary=Restart the Journey Companion launcher service (walker + elephant)
+# journey:examples=journey restart companion
+
+set -euo pipefail
+pkill -x walker   2>/dev/null || true
+pkill -x elephant 2>/dev/null || true
+sleep 0.2
+exec "$(dirname "$0")/journey-launch-companion" --hide

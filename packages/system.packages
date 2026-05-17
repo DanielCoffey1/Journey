@@ -1,0 +1,95 @@
+# Journey Companion system / driver package list.
+# The installer reads this *after* hardware probing — most packages here are
+# only installed when matching hardware is detected.
+#
+# Lines starting with # are ignored. Blank lines are ignored.
+#
+# Format:
+#   pkg-name              # always install
+#   pkg-name [tag]        # only install when hardware tag matches
+#
+# Hardware tags currently recognized by install.sh:
+#   [nvidia]   — NVIDIA GPU detected
+#   [intel]    — Intel iGPU detected
+#   [amd]      — AMD GPU detected
+#   [asahi]    — Apple Silicon / Asahi
+#   [t2]       — Apple T2 MacBook
+#   [surface]  — Microsoft Surface
+#   [dell-xps] — Dell XPS series
+#   [asus]     — ASUS laptops (ROG / TUF)
+#   [framework16] — Framework 16
+#   [broadcom] — Broadcom WiFi
+
+# Base system (always installed)
+base
+base-devel
+linux
+linux-headers
+linux-firmware
+git
+dkms
+autoconf-archive
+
+# Audio (always)
+pipewire
+pipewire-alsa
+pipewire-jack
+pipewire-pulse
+gst-plugin-pipewire
+libpulse
+sof-firmware
+
+# Power / thermal (always)
+power-profiles-daemon
+thermald
+
+# Filesystem extras (always)
+btrfs-progs
+snapper
+
+# Boot loader (always — Limine is the Omarchy-style default)
+limine
+limine-mkinitcpio-hook
+limine-snapper-sync
+
+# Memory (always)
+zram-generator
+
+# Wayland EGL bridge (always — small)
+egl-wayland
+gtk4-layer-shell
+
+# JDK (kept always for IDE compatibility — comment out if you want it slim)
+jdk-openjdk
+
+# GPU drivers — auto-selected
+vulkan-intel       [intel]
+vulkan-radeon      [amd]
+vulkan-asahi       [asahi]
+intel-media-driver [intel]
+libva-intel-driver [intel]
+libvpl             [intel]
+vpl-gpu-rt         [intel]
+intel-ipu7-camera  [intel]
+intel-lpmd         [intel]
+libva-nvidia-driver  [nvidia]
+nvidia-dkms          [nvidia]
+nvidia-utils         [nvidia]
+lib32-nvidia-utils   [nvidia]
+
+# Hardware-specific
+broadcom-wl                                  [broadcom]
+asusctl                                      [asus]
+dell-xps-touchpad-haptics                    [dell-xps]
+macbook12-spi-driver-dkms                    [t2]
+apple-bcm-firmware                           [t2]
+apple-t2-audio-config                        [t2]
+linux-t2                                     [t2]
+linux-t2-headers                             [t2]
+t2fanrd                                      [t2]
+tiny-dfr                                     [t2]
+linux-firmware-marvell                       [surface]
+linux-ptl                                    [framework16]
+linux-ptl-headers                            [framework16]
+tuxedo-drivers-nocompatcheck-dkms            [framework16]
+yt6801-dkms                                  [framework16]

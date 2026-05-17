@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# `journey` — subcommand dispatcher for Journey Companion.
+#
+# Discovers sibling `journey-*` scripts and routes:
+#   journey theme set tokyo-night   →  journey-theme-set tokyo-night
+#   journey launch companion        →  journey-launch-companion
+#   journey menu                    →  journey-menu
+#
+# Each subcommand may include metadata comments:
+#   # journey:group=<name>
+#   # journey:name=<name>
+#   # journey:summary=<one-line description>
+#   # journey:args=<args spec>
+#   # journey:examples=<example>
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROG="journey"
+VERSION_FILE="$(dirname "$BIN_DIR")/version"
+JOURNEY_VERSION="$(cat "$VERSION_FILE" 2>/dev/null || echo unknown)"
+
+# --- helpers -----------------------------------------------------------------
+
+list_subcommands() {
+    # All bin/journey-* files (excluding this dispatcher), sorted.
+    find "$BIN_DIR" -maxdepth 1 -type f -name "${PROG}-*" -perm -u+x -printf '%f\n' 2>/dev/null | sort
+}
+
+# Read a metadata field from a script header.
+read_meta() {
+    local script="$1" field="$2"
+    awk -v key="^# ${PROG}:${field}=" '
+        /^[^#]/ { exit }
+        $0 ~ key { sub(key, ""); print; exit }
+    ' "$script"
+}
+
+# Resolve `journey foo bar baz` to a script path. Tries the longest-prefix match:
+#   journey-foo-bar-baz   (deepest)
+#   journey-foo-bar       (then forwards remaining args)
+#   journey-foo
+resolve() {
+    local parts=("$@") n=${#@}
+    while (( n > 0 )); do
+        local name="$PROG"
+        for ((i=0; i<n; i++)); do name+="-${parts[i]}"; done
+        local candidate="$BIN_DIR/$name"
+        if [[ -x $candidate ]]; then
+            printf '%s\n%d\n' "$candidate" "$n"
+            return 0
+        fi
+        ((n--))
+    done
+    return 1
+}
+
+print_version() {
+    printf '%s %s\n' "$PROG" "$JOURNEY_VERSION"
+}
+
+# --- help --------------------------------------------------------------------
+
+print_help() {
+    cat <<EOF
+$PROG — Journey Companion command-line ($JOURNEY_VERSION)
+
+Usage:
+  $PROG <command> [<subcommand>] [args...]
+  $PROG help [command]
+  $PROG version
+
+Common commands:
+  launch companion          Open the Journey Companion launcher (walker)
+  theme set <name>          Switch active theme
+  theme list                List installed themes
+  menu                      Open the root menu
+  menu power                Power menu (lock / suspend / reboot / shutdown)
+  menu keybindings          Show all keybindings
+  update                    Update Journey + system packages
+  pkg add <pkg>             Install a package (pacman or AUR)
+
+EOF
+    print_commands_grouped
+    cat <<EOF
+
+Run "$PROG help <command>" for detailed usage of a specific subcommand.
+EOF
+}
+
+# Print all discovered subcommands grouped by their `journey:group` metadata.
+print_commands_grouped() {
+    local script group name summary entry
+    declare -A groups
+    while IFS= read -r entry; do
+        script="$BIN_DIR/$entry"
+        group="$(read_meta "$script" group)"
+        name="$(read_meta "$script" name)"
+        summary="$(read_meta "$script" summary)"
+        [[ -z $name ]] && name="${entry#${PROG}-}"
+        [[ -z $group ]] && group="misc"
+        groups["$group"]+="  $name|$summary"$'\n'
+    done < <(list_subcommands)
+
+    local g rows
+    for g in $(printf '%s\n' "${!groups[@]}" | sort); do
+        printf '%s\n' "$g:"
+        rows="${groups[$g]}"
+        # Align name/summary columns at 30 chars
+        while IFS= read -r row; do
+            [[ -z $row ]] && continue
+            local n s
+            n="${row%%|*}"
+            s="${row#*|}"
+            printf '  %-30s %s\n' "$n" "$s"
+        done <<<"$rows"
+        printf '\n'
+    done
+}
+
+print_help_for() {
+    local resolved script
+    if ! resolved="$(resolve "$@")"; then
+        printf 'No subcommand matches: %s\n' "$*" >&2
+        return 1
+    fi
+    script="$(printf '%s' "$resolved" | sed -n '1p')"
+    [[ -z $script ]] && { printf 'No subcommand matches: %s\n' "$*" >&2; return 1; }
+
+    local group name summary args examples
+    group="$(read_meta "$script" group)"
+    name="$(read_meta "$script" name)"
+    summary="$(read_meta "$script" summary)"
+    args="$(read_meta "$script" args)"
+    examples="$(read_meta "$script" examples)"
+
+    printf '%s\n' "$(basename "$script")"
+    [[ -n $summary  ]] && printf '\n%s\n' "$summary"
+    [[ -n $group    ]] && printf '\nGroup:    %s\n' "$group"
+    [[ -n $args     ]] && printf 'Usage:    %s %s %s\n' "$PROG" "${name:-$(basename "$script" | sed "s/^${PROG}-//; s/-/ /g")}" "$args"
+    [[ -n $examples ]] && printf 'Example:  %s\n' "$examples"
+}
+
+# --- main --------------------------------------------------------------------
+
+main() {
+    if [[ $# -eq 0 ]]; then
+        print_help
+        return 0
+    fi
+    case "$1" in
+        -h|--help|help)
+            shift
+            if [[ $# -eq 0 ]]; then print_help; else print_help_for "$@"; fi
+            return 0
+            ;;
+        -v|--version|version)
+            print_version
+            return 0
+            ;;
+    esac
+
+    local resolved
+    if ! resolved="$(resolve "$@")"; then
+        printf '%s: unknown command: %s\n' "$PROG" "$*" >&2
+        printf 'Try "%s help" for the list of commands.\n' "$PROG" >&2
+        return 1
+    fi
+    local script; script="$(printf '%s' "$resolved" | sed -n '1p')"
+    local consumed; consumed="$(printf '%s' "$resolved" | sed -n '2p')"
+    shift "$consumed"
+    exec "$script" "$@"
+}
+
+main "$@"

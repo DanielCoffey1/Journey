@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch companion
+# journey:summary=Open the Journey Companion launcher (walker)
+# journey:args=[walker-args...]
+# journey:examples=journey launch companion -m symbols
+
+# Ensures elephant + walker services are running, then opens the launcher with
+# Journey's window sizing. All extra args are forwarded to walker, so
+# `journey-launch-companion -m symbols` opens the symbols (emoji) module.
+
+set -euo pipefail
+
+start_service() {
+    local name="$1"; shift
+    if ! pgrep -x "$name" >/dev/null 2>&1; then
+        if command -v uwsm-app >/dev/null; then
+            setsid uwsm-app -- "$@" >/dev/null 2>&1 &
+        else
+            setsid "$@" >/dev/null 2>&1 &
+        fi
+    fi
+}
+
+start_service elephant elephant
+# GSK_RENDERER=cairo avoids GPU stalls on some setups
+start_service walker env GSK_RENDERER=cairo walker --gapplication-service
+
+exec walker --width 644 --maxheight 300 --minheight 300 "$@"

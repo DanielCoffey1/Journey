@@ -1,0 +1,189 @@
+# Journey Companion base package list — installed via pacman (official repos).
+# AUR-only packages live in packages/aur.packages.
+# Hardware-specific drivers live in packages/system.packages.
+#
+# Lines starting with # are ignored. Blank lines are ignored.
+
+# Window manager + Wayland stack
+hyprland
+hypridle
+hyprlock
+hyprpicker
+hyprsunset
+hyprland-guiutils
+hyprland-preview-share-picker
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xdg-terminal-exec
+qt5-wayland
+qt6-wayland
+uwsm
+polkit-gnome
+wl-clipboard
+
+# Launcher backend (walker comes from AUR list)
+# nothing here yet — walker pulls in its own deps
+
+# Bar + notifications + OSD
+waybar
+mako
+swayosd
+swaybg
+
+# Terminals
+alacritty
+foot
+
+# Editors / dev tools
+nvim
+helix
+git
+github-cli
+lazygit
+lazydocker
+claude-code
+mise
+ruby
+rust
+clang
+llvm
+luarocks
+tree-sitter-cli
+python-gobject
+python-poetry-core
+python-terminaltexteffects
+
+# CLI utilities
+fzf
+fd
+ripgrep
+jq
+gum
+bat
+eza
+dust
+tldr
+zoxide
+starship
+fastfetch
+tmux
+unzip
+plocate
+whois
+inetutils
+inxi
+expac
+xmlstarlet
+socat
+bash-completion
+less
+man-db
+
+# File manager + viewers
+nautilus
+nautilus-python
+gnome-disk-utility
+sushi
+gvfs-mtp
+gvfs-nfs
+gvfs-smb
+evince
+imv
+mpv
+ffmpegthumbnailer
+webp-pixbuf-loader
+
+# Browsers / chat / productivity
+chromium
+signal-desktop
+obsidian
+libreoffice-fresh
+xournalpp
+pinta
+typora
+
+# Media production
+obs-studio
+kdenlive
+gpu-screen-recorder
+imagemagick
+tesseract
+tesseract-data-eng
+
+# Audio stack
+pamixer
+playerctl
+wiremix
+wireplumber
+alsa-utils
+
+# Networking
+avahi
+nss-mdns
+iwd
+impala
+ufw
+ufw-docker
+localsend
+bluetui
+
+# Printing
+cups
+cups-browsed
+cups-filters
+cups-pdf
+system-config-printer
+
+# Containers
+docker
+docker-buildx
+docker-compose
+
+# Input methods
+fcitx5
+fcitx5-gtk
+fcitx5-qt
+
+# Theming / fonts
+gnome-themes-extra
+yaru-icon-theme
+kvantum-qt5
+fontconfig
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+ttf-jetbrains-mono-nerd
+ttf-ia-writer
+woff2-font-awesome
+
+# Capture / OCR helpers
+grim
+slurp
+satty
+
+# Boot / login
+sddm
+plymouth
+
+# Filesystem
+exfatprogs
+dosfstools
+
+# Security / secrets
+gnome-keyring
+libsecret
+
+# Misc utilities
+brightnessctl
+btop
+bolt
+gnome-calculator
+libqalculate
+libyaml
+postgresql-libs
+mariadb-libs
+dotnet-runtime-9.0
+tzupdate
+usage
+asdcontrol
+kernel-modules-hook

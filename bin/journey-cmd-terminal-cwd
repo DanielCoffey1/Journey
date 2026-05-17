@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# journey:group=cmd
+# journey:name=cmd terminal-cwd
+# journey:summary=Print the cwd of the focused terminal (or $HOME if none)
+# journey:examples=uwsm-app -- nautilus --new-window "$(journey-cmd-terminal-cwd)"
+
+# Inspect the focused window via hyprctl and try to read /proc/<pid>/cwd.
+# Falls back to $HOME if anything is missing — guarantees a usable directory.
+set -euo pipefail
+
+fallback() { printf '%s\n' "$HOME"; exit 0; }
+
+command -v hyprctl >/dev/null || fallback
+command -v jq      >/dev/null || fallback
+
+pid="$(hyprctl activewindow -j 2>/dev/null | jq -r '.pid // empty')"
+[[ -z $pid || $pid == "0" ]] && fallback
+
+cwd="$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)"
+[[ -d $cwd ]] || fallback
+
+printf '%s\n' "$cwd"

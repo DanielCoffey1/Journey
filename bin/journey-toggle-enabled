@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# journey:group=toggle
+# journey:name=toggle enabled
+# journey:summary=Exit 0 if the named toggle is on, exit 1 otherwise
+# journey:args=<toggle-name>
+# journey:examples=journey-toggle-enabled waybar-off && echo "waybar is off"
+
+# Toggles are tracked as marker files under ~/.local/state/journey/toggles/.
+set -euo pipefail
+name="${1:?toggle name required}"
+[[ -e "$HOME/.local/state/journey/toggles/$name" ]]

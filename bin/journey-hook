@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# journey:group=hook
+# journey:name=hook
+# journey:summary=Run all hook scripts for a given event
+# journey:args=<event-name>
+# journey:examples=journey-hook post-boot
+
+# Looks in two places, in order:
+#   ~/.local/share/journey/hooks/<event>/*    (shipped defaults)
+#   ~/.config/journey/hooks/<event>/*         (user overrides / additions)
+# Every executable script is run; non-zero exits are logged but don't abort.
+set -euo pipefail
+
+event="${1:?hook event required}"
+roots=("$HOME/.local/share/journey/hooks/$event" "$HOME/.config/journey/hooks/$event")
+
+for root in "${roots[@]}"; do
+    [[ -d $root ]] || continue
+    for hook in "$root"/*; do
+        [[ -x $hook ]] || continue
+        if ! "$hook"; then
+            printf 'journey-hook: %s failed (exit %d)\n' "$hook" "$?" >&2
+        fi
+    done
+done

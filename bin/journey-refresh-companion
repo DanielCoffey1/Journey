@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=refresh companion
+# journey:summary=Reload the Journey Companion launcher's theme/config without a full restart
+# journey:examples=journey refresh companion
+
+# Walker watches its config + theme files; a SIGUSR1 (where supported) triggers
+# a reload. Fall back to a full restart if that doesn't work.
+set -euo pipefail
+if pkill -SIGUSR1 -x walker 2>/dev/null; then
+    exit 0
+fi
+exec "$(dirname "$0")/journey-restart-companion"

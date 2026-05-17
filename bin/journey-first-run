@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# journey:group=setup
+# journey:name=first run
+# journey:summary=One-time post-install setup (idempotent — safe to re-run)
+
+set -euo pipefail
+STATE="$HOME/.local/state/journey"
+mkdir -p "$STATE"
+
+[[ -f "$STATE/first-run.done" ]] && exit 0
+
+# Future: onboarding wizard, monitor configuration, github auth, etc.
+touch "$STATE/first-run.done"

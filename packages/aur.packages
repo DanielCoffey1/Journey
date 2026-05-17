@@ -1,0 +1,14 @@
+# Journey Companion AUR package list — installed via yay.
+# Lines starting with # are ignored. Blank lines are ignored.
+
+# Launcher (Walker GTK4 launcher with full Journey config support)
+walker-bin
+
+# Optional proprietary apps (uncomment if you want them by default)
+# 1password
+# 1password-cli
+# spotify
+# claude-code
+# cliamp
+
+# Journey doesn't fork walker or nvim — we ship pure config on top of upstream.

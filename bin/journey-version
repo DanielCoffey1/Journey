@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# journey:group=info
+# journey:name=version
+# journey:summary=Print Journey Companion version
+
+set -euo pipefail
+cat "$(dirname "$(dirname "$(readlink -f "$0")")")/version"
