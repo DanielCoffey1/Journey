@@ -47,12 +47,12 @@ This README **is** the project todo list. Check items off as they ship. When you
 ### Phase 3 — Theming
 
 - [x] `themes/tokyo-night/` — current daily-driver theme, pre-generated per-app files
-- [ ] `bin/journey-theme-list`
-- [ ] `bin/journey-theme-set`
-- [ ] `bin/journey-theme-current`
-- [ ] `bin/journey-theme-install` (install custom theme from file/URL)
-- [ ] Symlink-into-`~/.config/journey/current/theme/` mechanism on theme-set
-- [ ] Live reload (refresh walker, mako, waybar, swayosd on theme-set)
+- [x] `bin/journey-theme-list` — shipped + user themes, `*` marks active
+- [x] `bin/journey-theme-set` — atomic symlink swap + live service reload
+- [x] `bin/journey-theme-current`
+- [x] `bin/journey-theme-install` — accepts local dir, archive (.tar.gz/.xz/.bz2/.zip), HTTP/HTTPS, or git URL; supports `--name` and `--activate`
+- [x] Symlink-into-`~/.config/journey/current/theme/` mechanism on theme-set
+- [x] Live reload on theme-set (hyprctl reload, makoctl reload, waybar SIGUSR2, swaybg respawn, walker restart, swayosd kill, gsettings icon-theme, asusctl RGB)
 - [ ] Port remaining 18 themes from Omarchy (catppuccin, gruvbox, nord, rose-pine, kanagawa, ethereal, etc.)
 - [ ] Color-token templating so themes generate per-app files at install instead of being pre-baked
 

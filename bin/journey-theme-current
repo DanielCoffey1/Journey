@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# journey:group=theme
+# journey:name=theme current
+# journey:summary=Print the name of the active theme
+# journey:examples=journey theme current
+
+set -euo pipefail
+JOURNEY_CONFIG="${JOURNEY_CONFIG:-$HOME/.config/journey}"
+
+if [[ -f $JOURNEY_CONFIG/current/theme.name ]]; then
+    cat "$JOURNEY_CONFIG/current/theme.name"
+else
+    echo "(none)" >&2
+    exit 1
+fi

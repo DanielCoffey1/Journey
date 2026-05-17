@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# journey:group=theme
+# journey:name=theme list
+# journey:summary=List all installed themes (shipped + user)
+# journey:args=[--names-only]
+# journey:examples=journey theme list
+
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+JOURNEY_CONFIG="${JOURNEY_CONFIG:-$HOME/.config/journey}"
+
+names_only=0
+for arg in "$@"; do
+    case "$arg" in
+        --names-only) names_only=1 ;;
+        -h|--help) sed -n '2,5p' "$0"; exit 0 ;;
+    esac
+done
+
+current=""
+[[ -f $JOURNEY_CONFIG/current/theme.name ]] && current="$(<"$JOURNEY_CONFIG/current/theme.name")"
+
+emit() {
+    local source="$1" dir="$2" name
+    [[ -d $dir ]] || return 0
+    for entry in "$dir"/*/; do
+        [[ -d $entry ]] || continue
+        name="$(basename "$entry")"
+        if (( names_only )); then
+            printf '%s\n' "$name"
+        else
+            local marker="  "
+            [[ $name == "$current" ]] && marker="* "
+            printf '%s%-20s  %s\n' "$marker" "$name" "$source"
+        fi
+    done
+}
+
+emit shipped "$JOURNEY_HOME/themes"
+emit user    "$JOURNEY_CONFIG/themes"

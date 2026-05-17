@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# journey:group=theme
+# journey:name=theme set
+# journey:summary=Switch the active theme and live-reload theme-aware services
+# journey:args=<name>
+# journey:examples=journey theme set tokyo-night
+
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+JOURNEY_CONFIG="${JOURNEY_CONFIG:-$HOME/.config/journey}"
+CURRENT_DIR="$JOURNEY_CONFIG/current"
+
+usage() { sed -n '2,6p' "$0" >&2; exit 1; }
+
+name="${1:-}"
+[[ -z $name ]] && usage
+
+# Resolve theme dir: user themes win over shipped themes when names collide.
+resolve_theme_dir() {
+    local n="$1"
+    for root in "$JOURNEY_CONFIG/themes" "$JOURNEY_HOME/themes"; do
+        [[ -d "$root/$n" ]] && { printf '%s\n' "$root/$n"; return 0; }
+    done
+    return 1
+}
+
+theme_dir="$(resolve_theme_dir "$name")" || {
+    printf 'journey theme set: no such theme: %s\n' "$name" >&2
+    printf 'Available themes:\n' >&2
+    "$JOURNEY_HOME/bin/journey-theme-list" --names-only | sed 's/^/  /' >&2
+    exit 1
+}
+
+# Validate — every theme must define at least walker colors.
+if [[ ! -f "$theme_dir/walker.css" && ! -f "$theme_dir/colors.toml" ]]; then
+    printf 'journey theme set: %s is missing walker.css and colors.toml — refusing to activate\n' "$name" >&2
+    exit 1
+fi
+
+mkdir -p "$CURRENT_DIR"
+
+# Swap the theme symlink atomically (ln then mv beats rm + ln on race).
+tmp_link="$CURRENT_DIR/.theme.$$"
+ln -sfn "$theme_dir" "$tmp_link"
+mv -Tf "$tmp_link" "$CURRENT_DIR/theme"
+printf '%s\n' "$name" >"$CURRENT_DIR/theme.name"
+
+# Background: if the theme ships any, point ~/.config/journey/current/background
+# at the first one, unless the user already has a custom background pinned.
+update_background() {
+    local bgs_dir="$theme_dir/backgrounds"
+    [[ -d $bgs_dir ]] || return 0
+    local current_bg
+    current_bg="$(readlink -f "$CURRENT_DIR/background" 2>/dev/null || true)"
+    # Keep current background if it's already a file the user picked (not from old theme)
+    [[ -f $current_bg && $current_bg != *"/themes/"* ]] && return 0
+    local first
+    first="$(find "$bgs_dir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort | head -1)"
+    [[ -n $first ]] || return 0
+    ln -sfn "$first" "$CURRENT_DIR/background"
+}
+update_background
+
+# Reload theme-aware services. Each one is best-effort: missing daemons,
+# missing CLIs, or non-graphical sessions all degrade silently.
+reload_services() {
+    # Hyprland (re-reads ~/.config/journey/current/theme/hyprland.conf)
+    command -v hyprctl >/dev/null && hyprctl reload >/dev/null 2>&1 || true
+
+    # Mako notifications
+    command -v makoctl >/dev/null && makoctl reload >/dev/null 2>&1 || true
+
+    # Waybar (SIGUSR2 reloads config)
+    pkill -SIGUSR2 -x waybar 2>/dev/null || true
+
+    # Swaybg — kill the running one, autostart respawns from the new background symlink
+    if pgrep -x swaybg >/dev/null 2>&1; then
+        pkill -x swaybg 2>/dev/null || true
+        if [[ -e "$CURRENT_DIR/background" ]] && command -v uwsm-app >/dev/null; then
+            setsid uwsm-app -- swaybg -i "$CURRENT_DIR/background" -m fill >/dev/null 2>&1 &
+        fi
+    fi
+
+    # Walker / Journey Companion launcher — restart so style.css is re-read
+    if [[ -x "$JOURNEY_HOME/bin/journey-restart-companion" ]]; then
+        "$JOURNEY_HOME/bin/journey-restart-companion" >/dev/null 2>&1 || true
+    fi
+
+    # SwayOSD — no reload signal; kill so it picks up new CSS next time
+    pkill -x swayosd-server 2>/dev/null || true
+
+    # GTK icon theme
+    if command -v gsettings >/dev/null && [[ -f $theme_dir/icons.theme ]]; then
+        local icon_theme
+        icon_theme="$(head -1 "$theme_dir/icons.theme" | tr -d '[:space:]')"
+        [[ -n $icon_theme ]] && gsettings set org.gnome.desktop.interface icon-theme "$icon_theme" 2>/dev/null || true
+    fi
+
+    # Keyboard RGB (asusctl is best-effort, hardware-specific)
+    if command -v asusctl >/dev/null && [[ -f $theme_dir/keyboard.rgb ]]; then
+        local rgb
+        rgb="$(head -1 "$theme_dir/keyboard.rgb" | tr -d '[:space:]#')"
+        [[ -n $rgb ]] && asusctl led-mode static -c "$rgb" >/dev/null 2>&1 || true
+    fi
+}
+reload_services
+
+# Run theme-set hooks (default hooks + user hooks)
+if [[ -x "$JOURNEY_HOME/bin/journey-hook" ]]; then
+    "$JOURNEY_HOME/bin/journey-hook" theme-set || true
+fi
+
+printf 'Theme: %s\n' "$name"
