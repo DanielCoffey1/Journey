@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu system
+# journey:summary=Power menu — lock / suspend / hibernate / reboot / shutdown / log out
+# journey:examples=journey-menu system
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+items=$'​   Lock\n​   Suspend\n​   Hibernate\n​   Relaunch Hyprland\n​   Reboot\n​   Shutdown\n​   Log out'
+
+choice="$(printf '%s\n' "$items" | "$BIN_DIR/journey-pick" --prompt "System" --placeholder " System...")"
+[[ -z $choice ]] && exit 0
+
+case "$choice" in
+    *Lock*)
+        if command -v hyprlock >/dev/null; then
+            hyprlock &
+        elif [[ -x $BIN_DIR/journey-system-lock ]]; then
+            "$BIN_DIR/journey-system-lock"
+        fi
+        ;;
+    *Suspend*)
+        systemctl suspend
+        ;;
+    *Hibernate*)
+        systemctl hibernate
+        ;;
+    *"Relaunch Hyprland"*)
+        hyprctl reload
+        ;;
+    *Reboot*)
+        systemctl reboot
+        ;;
+    *Shutdown*)
+        systemctl poweroff
+        ;;
+    *"Log out"*)
+        if command -v uwsm >/dev/null; then
+            uwsm stop
+        else
+            hyprctl dispatch exit
+        fi
+        ;;
+esac

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu toggle
+# journey:summary=Pick a session toggle to flip (waybar, idle, nightlight, notifications, touchpad)
+# journey:examples=journey-menu toggle
+
+# Each toggle is a marker file under ~/.local/state/journey/toggles/. Whether
+# the corresponding daemon listens for the toggle is up to that daemon's
+# journey-toggle-<name> script (see Phase 7). This menu only flips the marker
+# and runs the toggle script when present.
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+STATE="$HOME/.local/state/journey/toggles"
+mkdir -p "$STATE"
+
+toggles=(waybar idle nightlight notification-silencing touchpad)
+
+# Build "label state" rows so the user sees what's on/off.
+rows=""
+for t in "${toggles[@]}"; do
+    if [[ -e $STATE/$t ]]; then
+        rows+="[ON]  $t"$'\n'
+    else
+        rows+="[off] $t"$'\n'
+    fi
+done
+
+choice="$(printf '%s' "$rows" | "$BIN_DIR/journey-pick" --prompt "Toggle" --placeholder " Toggle...")"
+[[ -z $choice ]] && exit 0
+
+name="${choice##* }"
+script="$BIN_DIR/journey-toggle-$name"
+if [[ -x $script ]]; then
+    exec "$script"
+fi
+
+# No specific toggle script — just flip the marker so journey-toggle-enabled
+# reflects the new state, and notify the user.
+if [[ -e $STATE/$name ]]; then
+    rm -f "$STATE/$name"
+    state="off"
+else
+    : >"$STATE/$name"
+    state="on"
+fi
+command -v notify-send >/dev/null && notify-send -u low "Toggle" "$name → $state" || printf '%s → %s\n' "$name" "$state"

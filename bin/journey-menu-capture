@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu capture
+# journey:summary=Capture menu — screenshot region / window / screen, color pick, OCR, record
+# journey:examples=journey-menu capture
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+SCREENSHOT_DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$SCREENSHOT_DIR"
+
+items=$'​   Region\n​   Window\n​   Full screen\n​   Color picker\n​   Extract text (OCR)\n​   Screen record'
+
+choice="$(printf '%s\n' "$items" | "$BIN_DIR/journey-pick" --prompt "Capture" --placeholder " Capture...")"
+[[ -z $choice ]] && exit 0
+
+# Filename for screenshots and recordings
+stamp="$(date +'%Y-%m-%d_%H-%M-%S')"
+
+# Try to use satty for annotation; otherwise just save + copy.
+annotate_and_save() {
+    local src="$1" dest="$SCREENSHOT_DIR/screenshot-$stamp.png"
+    if command -v satty >/dev/null; then
+        cat "$src" | satty --filename - --output-filename "$dest" --copy-command wl-copy >/dev/null 2>&1 || cp "$src" "$dest"
+    else
+        cp "$src" "$dest"
+        command -v wl-copy >/dev/null && wl-copy <"$dest" || true
+    fi
+    command -v notify-send >/dev/null && notify-send -u low "Screenshot saved" "$dest" || true
+}
+
+case "$choice" in
+    *Region*)
+        command -v grim  >/dev/null || { notify-send -u critical "grim not installed"; exit 1; }
+        command -v slurp >/dev/null || { notify-send -u critical "slurp not installed"; exit 1; }
+        geom="$(slurp)" || exit 0
+        tmp="$(mktemp --suffix=.png)"
+        grim -g "$geom" "$tmp"
+        annotate_and_save "$tmp"
+        rm -f "$tmp"
+        ;;
+    *Window*)
+        command -v grim    >/dev/null || { notify-send -u critical "grim not installed"; exit 1; }
+        command -v hyprctl >/dev/null || { notify-send -u critical "hyprctl not available"; exit 1; }
+        command -v jq      >/dev/null || { notify-send -u critical "jq not installed"; exit 1; }
+        win="$(hyprctl activewindow -j | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')"
+        tmp="$(mktemp --suffix=.png)"
+        grim -g "$win" "$tmp"
+        annotate_and_save "$tmp"
+        rm -f "$tmp"
+        ;;
+    *"Full screen"*)
+        command -v grim >/dev/null || { notify-send -u critical "grim not installed"; exit 1; }
+        tmp="$(mktemp --suffix=.png)"
+        grim "$tmp"
+        annotate_and_save "$tmp"
+        rm -f "$tmp"
+        ;;
+    *"Color picker"*)
+        command -v hyprpicker >/dev/null || { notify-send -u critical "hyprpicker not installed"; exit 1; }
+        pkill hyprpicker 2>/dev/null || true
+        hyprpicker -a
+        ;;
+    *OCR*)
+        for c in grim slurp tesseract wl-copy; do
+            command -v "$c" >/dev/null || { notify-send -u critical "$c not installed"; exit 1; }
+        done
+        geom="$(slurp)" || exit 0
+        tmp="$(mktemp --suffix=.png)"
+        grim -g "$geom" "$tmp"
+        tesseract "$tmp" - 2>/dev/null | wl-copy
+        notify-send -u low "OCR text copied to clipboard"
+        rm -f "$tmp"
+        ;;
+    *"Screen record"*)
+        if command -v gpu-screen-recorder >/dev/null; then
+            dest="$SCREENSHOT_DIR/recording-$stamp.mp4"
+            notify-send -u low "Recording started" "Press the same shortcut to stop"
+            gpu-screen-recorder -w screen -f 60 -o "$dest" &
+        else
+            notify-send -u critical "gpu-screen-recorder not installed"
+            exit 1
+        fi
+        ;;
+esac

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu theme
+# journey:summary=Pick a theme and activate it
+# journey:examples=journey-menu theme
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+choice="$("$BIN_DIR/journey-theme-list" --names-only | "$BIN_DIR/journey-pick" --prompt "Theme" --placeholder " Theme...")"
+[[ -z $choice ]] && exit 0
+"$BIN_DIR/journey-theme-set" "$choice"

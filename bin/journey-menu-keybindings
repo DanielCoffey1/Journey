@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu keybindings
+# journey:summary=Show all keybindings — searchable list parsed from Hyprland configs
+# journey:examples=journey-menu keybindings
+
+# Parses every `bindd…` line out of Journey-default and user-side hyprland
+# bindings, formats them as "MOD+KEY → Description", and pipes to journey-pick
+# so the user can search and reveal one with `notify-send`.
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$BIN_DIR")}"
+
+paths=(
+    "$JOURNEY_HOME/default/hypr/bindings.conf"
+    "$JOURNEY_HOME/default/hypr/bindings"/*.conf
+    "$HOME/.config/hypr/bindings.conf"
+)
+
+# bindd / bindeld / bindld / bindmd / bindldn lines all use the same shape:
+#   <bindname> = MOD, KEY, Description, dispatcher, args
+# We want fields 1 (mods), 2 (key), 3 (description).
+parse() {
+    local file
+    for file in "${paths[@]}"; do
+        [[ -r $file ]] || continue
+        awk -F',' '
+            /^[[:space:]]*bind[a-z]*[[:space:]]*=/ {
+                split($0, head, "=")
+                # head[2] is the comma-list after =
+                # Strip leading whitespace from each field
+                gsub(/^[[:space:]]+/, "", $1)
+                # Re-split the comma list properly
+                n = split(head[2], parts, ",")
+                if (n < 3) next
+                mods = parts[1]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", mods)
+                key  = parts[2]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+                desc = parts[3]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", desc)
+                if (desc == "") next
+                # Compose "MOD+KEY"
+                combo = mods
+                if (combo == "") combo = key
+                else combo = combo " + " key
+                # Pad combo so descriptions line up
+                printf "  %-32s  %s\n", combo, desc
+            }
+        ' "$file"
+    done | sort -u
+}
+
+choice="$(parse | "$BIN_DIR/journey-pick" --prompt "Keybindings" --placeholder " Search…" --height 600)"
+[[ -z $choice ]] && exit 0
+command -v notify-send >/dev/null && notify-send -u low "Keybinding" "$choice" || printf '%s\n' "$choice"

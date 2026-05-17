@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu background
+# journey:summary=Pick a background image for the current theme
+# journey:examples=journey-menu background
+
+# Lists images in the active theme's backgrounds/ dir, swaps the current
+# background symlink, and restarts swaybg so it takes effect immediately.
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+JOURNEY_CONFIG="${JOURNEY_CONFIG:-$HOME/.config/journey}"
+CURRENT_DIR="$JOURNEY_CONFIG/current"
+BG_DIR="$CURRENT_DIR/theme/backgrounds"
+
+if [[ ! -d $BG_DIR ]]; then
+    command -v notify-send >/dev/null && notify-send -u critical "No backgrounds available" "Active theme has no backgrounds/ directory."
+    exit 1
+fi
+
+# Build "filename" → "full path" map
+mapfile -t files < <(find "$BG_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort)
+if (( ${#files[@]} == 0 )); then
+    command -v notify-send >/dev/null && notify-send -u critical "No backgrounds" "Drop images into $BG_DIR"
+    exit 1
+fi
+
+# Show just basenames in the picker (resolve back to full path after)
+choice="$(printf '%s\n' "${files[@]}" | xargs -n1 basename | "$BIN_DIR/journey-pick" --prompt "Background" --placeholder " Background...")"
+[[ -z $choice ]] && exit 0
+
+full=""
+for f in "${files[@]}"; do
+    [[ "$(basename "$f")" == "$choice" ]] && { full="$f"; break; }
+done
+[[ -z $full ]] && exit 1
+
+tmp_link="$CURRENT_DIR/.background.$$"
+ln -sfn "$full" "$tmp_link"
+mv -Tf "$tmp_link" "$CURRENT_DIR/background"
+
+# Restart swaybg so the new image takes effect.
+pkill -x swaybg 2>/dev/null || true
+if command -v uwsm-app >/dev/null; then
+    setsid uwsm-app -- swaybg -i "$CURRENT_DIR/background" -m fill >/dev/null 2>&1 &
+elif command -v swaybg >/dev/null; then
+    setsid swaybg -i "$CURRENT_DIR/background" -m fill >/dev/null 2>&1 &
+fi

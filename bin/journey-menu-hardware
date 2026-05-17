@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu hardware
+# journey:summary=Hardware menu — WiFi, Bluetooth, Audio, Display
+# journey:examples=journey-menu hardware
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+items=$'​   WiFi\n​   Bluetooth\n​   Audio\n​   Display'
+
+choice="$(printf '%s\n' "$items" | "$BIN_DIR/journey-pick" --prompt "Hardware" --placeholder " Hardware...")"
+[[ -z $choice ]] && exit 0
+
+launch() {
+    local target="$1"; shift
+    if [[ -x "$BIN_DIR/$target" ]]; then
+        exec "$BIN_DIR/$target" "$@"
+    fi
+    # Last-resort fallbacks until Phase 7 lands.
+    case "$target" in
+        journey-launch-wifi)      command -v impala >/dev/null && exec uwsm-app -- xdg-terminal-exec impala ;;
+        journey-launch-bluetooth) command -v bluetui >/dev/null && exec uwsm-app -- xdg-terminal-exec bluetui ;;
+        journey-launch-audio)     command -v wiremix >/dev/null && exec uwsm-app -- xdg-terminal-exec wiremix ;;
+    esac
+    command -v notify-send >/dev/null && notify-send -u critical "Journey" "$target not available yet"
+    exit 1
+}
+
+case "$choice" in
+    *WiFi*)      launch journey-launch-wifi ;;
+    *Bluetooth*) launch journey-launch-bluetooth ;;
+    *Audio*)     launch journey-launch-audio ;;
+    *Display*)
+        # Display menu is just a notify-send for now; a richer one will land in Phase 7.
+        if command -v hyprctl >/dev/null; then
+            info="$(hyprctl monitors | head -40)"
+            command -v notify-send >/dev/null && notify-send -u low "Monitors" "$info" || printf '%s\n' "$info"
+        fi
+        ;;
+esac

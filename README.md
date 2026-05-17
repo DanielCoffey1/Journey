@@ -58,18 +58,18 @@ This README **is** the project todo list. Check items off as they ship. When you
 
 ### Phase 4 — Menus
 
-- [ ] `bin/journey-menu` — root menu dispatcher
-- [ ] `bin/journey-menu-power` (lock / suspend / restart / shut down / log out)
-- [ ] `bin/journey-menu-system`
-- [ ] `bin/journey-menu-capture` (screenshot / screen record / OCR)
-- [ ] `bin/journey-menu-keybindings` (pretty-printed list of all binds)
-- [ ] `bin/journey-menu-theme`
-- [ ] `bin/journey-menu-background`
-- [ ] `bin/journey-menu-toggle`
-- [ ] `bin/journey-menu-hardware`
+- [x] `bin/journey-pick` — shared picker (walker --dmenu / gum / fzf fallback chain)
+- [x] `bin/journey-menu` — root menu + subcommand dispatcher (`journey-menu system` → exec `journey-menu-system`)
+- [x] `bin/journey-menu-system` — power menu (lock / suspend / hibernate / relaunch hypr / reboot / shutdown / log out). Same as Omarchy's `omarchy menu system`.
+- [x] `bin/journey-menu-capture` — region / window / full-screen screenshot (with satty annotation), color picker, OCR, screen record
+- [x] `bin/journey-menu-keybindings` — searchable list parsed from Hyprland configs (192 binds today)
+- [x] `bin/journey-menu-theme` — picks from `journey-theme-list`, hands off to `journey-theme-set`
+- [x] `bin/journey-menu-background` — picks from active theme's `backgrounds/`, swaps symlink, restarts swaybg
+- [x] `bin/journey-menu-toggle` — flips marker files; uses `journey-toggle-<name>` script when present
+- [x] `bin/journey-menu-hardware` — WiFi / Bluetooth / Audio / Display sub-menu (terminal TUI fallbacks: impala, bluetui, wiremix)
 - [ ] `bin/journey-menu-share`
 - [ ] `bin/journey-menu-reminder-set`
-- [ ] `bin/journey-menu-screenrecord`
+- [ ] `bin/journey-menu-screenrecord` (standalone; capture menu has one inline today)
 
 ### Phase 5 — Hooks
 
