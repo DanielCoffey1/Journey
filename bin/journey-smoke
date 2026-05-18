@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# journey:group=dev
+# journey:name=smoke
+# journey:summary=Build an Arch docker image and run the install/uninstall smoke test
+# journey:args=[--no-build] [--keep] [--shell]
+# journey:examples=journey-smoke
+
+# What this does:
+#   1. Builds an `archlinux:latest`-based image with the project source baked
+#      in. The Dockerfile installs only the tools install.sh needs to run with
+#      JOURNEY_SKIP_PACKAGES=1 (no pacman -Syu, no yay, no systemd).
+#   2. Runs install/smoke/test.sh inside the container, which:
+#        - executes install.sh
+#        - asserts 50+ filesystem-state expectations
+#        - runs journey-uninstall --yes --purge
+#        - re-asserts the cleanup
+#   3. Returns the container's exit code.
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+
+no_build=0; keep=0; shell=0
+for arg in "$@"; do
+    case "$arg" in
+        --no-build) no_build=1 ;;
+        --keep)     keep=1 ;;
+        --shell)    shell=1 ;;
+        -h|--help)  sed -n '2,17p' "$0"; exit 0 ;;
+        *) echo "journey-smoke: unknown flag: $arg" >&2; exit 2 ;;
+    esac
+done
+
+if ! command -v docker >/dev/null; then
+    cat >&2 <<'EOF'
+journey-smoke: docker is required (try `journey pkg add docker`).
+After install, enable the service and add yourself to the docker group:
+    sudo systemctl enable --now docker
+    sudo usermod -aG docker "$USER"
+    newgrp docker
+EOF
+    exit 1
+fi
+
+IMAGE=journey-smoke:local
+DOCKERFILE="$JOURNEY_HOME/install/smoke/Dockerfile"
+
+if (( ! no_build )); then
+    echo "==> building $IMAGE (this can take a minute on first run)"
+    docker build -t "$IMAGE" -f "$DOCKERFILE" "$JOURNEY_HOME"
+fi
+
+run_args=(--rm)
+(( keep )) && run_args=( )  # let the container linger
+
+if (( shell )); then
+    echo "==> dropping into the container"
+    exec docker run "${run_args[@]}" -it --entrypoint /bin/bash "$IMAGE"
+fi
+
+echo "==> running smoke test"
+docker run "${run_args[@]}" "$IMAGE"

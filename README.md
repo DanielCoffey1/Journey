@@ -31,7 +31,7 @@ This README **is** the project todo list. Check items off as they ship. When you
 - [x] `bin/journey-launch-companion` — bound to SUPER+SPACE
 - [x] `bin/journey-restart-companion`, `bin/journey-refresh-companion`
 - [x] `default/elephant/{desktopapplications,calc,symbols}.toml` — walker data backend
-- [ ] App menu wired up (already comes free via `desktopapplications` provider — verify on a fresh box)
+- [x] App menu verified via `journey-smoke` — full install/use/uninstall lifecycle exercised inside an Arch container, 62/62 assertions pass (see `install/smoke/`)
 
 ### Phase 2 — Hyprland with 1:1 Keybinds
 
@@ -162,6 +162,14 @@ This README **is** the project todo list. Check items off as they ship. When you
 - [x] `bin/journey-update` — 6 phases: pull → migrate → base pkgs → AUR pkgs → system upgrade (`pacman -Syu` + `yay -Sua`) → `post-update` hook. Flags: `--check`, `--no-pull`, `--no-packages`, `--no-aur`, `--no-system`, `--yes`. Suggests reboot when kernel or hyprland was upgraded. Network failures on `git fetch` degrade gracefully (continue to local steps).
 - [x] `bin/journey-version` — print version
 - [x] `bin/journey-migrate` — runs `install/migrations/NNN-*.sh` scripts in numeric order; tracks state in `~/.local/state/journey/migrations.done`. Per-file idempotency; abort on first failure
+
+### Phase 11 — Smoke Test
+
+- [x] `bin/journey-smoke` — builds an `archlinux:latest` docker image with the project baked in, runs `install/smoke/test.sh` inside it
+- [x] `install/smoke/Dockerfile` — minimal Arch + sudo/git/bash/awk/grep/sed/diffutils/jq, non-root `testuser` with passwordless sudo, `JOURNEY_SKIP_PACKAGES=1` so no real pacman/yay/systemctl
+- [x] `install/smoke/test.sh` — 62 assertions across 11 phases: install tree, stowed configs, theme symlinks, PATH plumbing, hook layout, CLI dispatcher, theme switcher (incl. live switch to gruvbox), hook runner, pkg/update help, uninstall + cleanup
+- [x] `install.sh` honors `JOURNEY_SKIP_PACKAGES=1` (skips `ensure_yay`, `install_packages`, `enable_services`)
+- [x] All assertions pass on a clean run (62/62)
 
 ### Phase 10 — Polish
 

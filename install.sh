@@ -259,12 +259,17 @@ main() {
     ensure_sudo
     ensure_git
     ensure_repo
-    ensure_yay
-    install_packages
+    # JOURNEY_SKIP_PACKAGES=1 short-circuits anything that touches pacman/yay
+    # or systemd. Used by install/smoke/test.sh and by users who want to
+    # manage packages themselves.
+    if [[ -z ${JOURNEY_SKIP_PACKAGES:-} ]]; then
+        ensure_yay
+        install_packages
+    fi
     stow_configs
     link_path
     apply_default_theme
-    enable_services
+    [[ -z ${JOURNEY_SKIP_PACKAGES:-} ]] && enable_services
     run_post_install
 
     ok "Journey Companion installed."
