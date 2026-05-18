@@ -144,5 +144,54 @@ check "stowed walker config removed"                       "[[ ! -d '$HOME/.conf
 check ".bashrc has no Journey lines"                       "! grep -qF 'Journey Companion' '$HOME/.bashrc'"
 
 # --------------------------------------------------------------------------
+section "Phase 12: curl-pipe install path (file:// git remote)"
+# --------------------------------------------------------------------------
+# Simulates the `curl -fsSL .../install.sh | bash` flow:
+#   - install.sh runs from /tmp (no project checkout in its dirname)
+#   - JOURNEY_REPO is overridden to point at a file:// git remote
+#     (built from the project source so the test is hermetic)
+#   - install.sh's ensure_repo falls through to `git clone $JOURNEY_REPO`
+cp_home="/tmp/cp-home"
+git_remote="/tmp/journey-remote"
+standalone_installer="/tmp/install-standalone.sh"
+rm -rf "$cp_home" "$git_remote" "$standalone_installer"
+mkdir -p "$cp_home"
+
+# Build a fresh local git repo with the current source on `master`.
+cp -a "$SRC" "$git_remote"
+(
+    cd "$git_remote" && rm -rf .git
+    git init -q -b master 2>/dev/null || { git init -q && git symbolic-ref HEAD refs/heads/master; }
+    git add -A
+    git -c user.email=t@t -c user.name=t commit -qm "snapshot"
+) || { printf '%s✗%s could not build local git remote\n' "$c_red" "$c_reset"; (( fail++ )); }
+
+# Copy install.sh somewhere with no `version` / `bin/` siblings, so the
+# developer-flow short-circuit in ensure_repo skips and we hit `git clone`.
+cp "$SRC/install.sh" "$standalone_installer"
+
+# Run the simulated curl-pipe.
+if HOME="$cp_home" \
+   JOURNEY_HOME="$cp_home/.local/share/journey" \
+   JOURNEY_CONFIG="$cp_home/.config/journey" \
+   JOURNEY_REPO="file://$git_remote" \
+   JOURNEY_BRANCH=master \
+   JOURNEY_SKIP_PACKAGES=1 \
+   bash "$standalone_installer" >/tmp/cp-install.log 2>&1; then
+    printf '  %s✓%s curl-pipe install completed\n' "$c_green" "$c_reset"; (( pass++ ))
+else
+    printf '  %s✗%s curl-pipe install FAILED — last 30 log lines:\n' "$c_red" "$c_reset"; (( fail++ ))
+    tail -30 /tmp/cp-install.log | sed 's/^/    /'
+fi
+
+check "cloned tree has bin/journey (curl-pipe)"            "[[ -x '$cp_home/.local/share/journey/bin/journey' ]]"
+check "cloned tree has version file (curl-pipe)"           "[[ -f '$cp_home/.local/share/journey/version' ]]"
+check "default theme symlinked (curl-pipe)"                "[[ -L '$cp_home/.config/journey/current/theme' ]]"
+check "tokyo-night theme present (curl-pipe)"              "[[ -d '$cp_home/.local/share/journey/themes/tokyo-night' ]]"
+check "environment.d snippet written (curl-pipe)"          "[[ -f '$cp_home/.config/environment.d/10-journey.conf' ]]"
+check "JOURNEY_HOME in env.d snippet points at curl-pipe home" \
+    "grep -qF '$cp_home/.local/share/journey/bin' '$cp_home/.config/environment.d/10-journey.conf'"
+
+# --------------------------------------------------------------------------
 printf '\n%s%d passed, %d failed%s\n' "$c_bold" "$pass" "$fail" "$c_reset"
 exit "$(( fail > 0 ? 1 : 0 ))"
