@@ -4,8 +4,8 @@
 #         (or)   git clone … && cd journey && ./install.sh
 set -euo pipefail
 
-JOURNEY_REPO="${JOURNEY_REPO:-https://github.com/djcoffey/journey.git}"
-JOURNEY_BRANCH="${JOURNEY_BRANCH:-main}"
+JOURNEY_REPO="${JOURNEY_REPO:-https://github.com/DanielCoffey1/Journey.git}"
+JOURNEY_BRANCH="${JOURNEY_BRANCH:-master}"
 JOURNEY_HOME="${JOURNEY_HOME:-$HOME/.local/share/journey}"
 JOURNEY_CONFIG="${JOURNEY_CONFIG:-$HOME/.config/journey}"
 
