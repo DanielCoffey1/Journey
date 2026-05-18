@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build catppuccin --force
+@define-color background-color #1e1e2e;
+@define-color border-color #cdd6f4;
+@define-color label #cdd6f4;
+@define-color image #cdd6f4;
+@define-color progress #89b4fa;

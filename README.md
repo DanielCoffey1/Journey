@@ -53,8 +53,9 @@ This README **is** the project todo list. Check items off as they ship. When you
 - [x] `bin/journey-theme-install` — accepts local dir, archive (.tar.gz/.xz/.bz2/.zip), HTTP/HTTPS, or git URL; supports `--name` and `--activate`
 - [x] Symlink-into-`~/.config/journey/current/theme/` mechanism on theme-set
 - [x] Live reload on theme-set (hyprctl reload, makoctl reload, waybar SIGUSR2, swaybg respawn, walker restart, swayosd kill, gsettings icon-theme, asusctl RGB)
-- [ ] Port remaining 18 themes from Omarchy (catppuccin, gruvbox, nord, rose-pine, kanagawa, ethereal, etc.)
-- [ ] Color-token templating so themes generate per-app files at install instead of being pre-baked
+- [x] Ported 18 more themes from Omarchy: `catppuccin`, `catppuccin-latte`, `ethereal`, `everforest`, `flexoki-light`, `gruvbox`, `hackerman`, `kanagawa`, `lumon`, `matte-black`, `miasma`, `nord`, `osaka-jade`, `retro-82`, `ristretto`, `rose-pine`, `vantablack`, `white` — **19 themes total**
+- [x] Color-token templating via `themes/_templates/` + `bin/journey-theme-build` — parses `colors.toml` into `{{name}}` / `{{name_hex}}` / `{{name_rgb}}` tokens, renders 10 per-app files (walker.css, hyprland.conf, hyprlock.conf, mako.ini, waybar.css, swayosd.css, alacritty.toml, foot.ini, ghostty, gum.env.conf). Existing files with a `# journey-theme-build:auto` magic comment are safe to regenerate; hand-tuned overrides (catppuccin's waybar.css, etc.) are preserved unless `--force`. Templates verified by regenerating tokyo-night and diffing against the original hand-port (10/10 functional matches)
+- [x] `journey-theme-list` skips private `_*` directories (so `_templates/` doesn't appear as a theme)
 
 ### Phase 4 — Menus
 

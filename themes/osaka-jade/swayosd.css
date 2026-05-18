@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build osaka-jade --force
+@define-color background-color #111c18;
+@define-color border-color #C1C497;
+@define-color label #C1C497;
+@define-color image #C1C497;
+@define-color progress #509475;

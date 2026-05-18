@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# journey:group=theme
+# journey:name=theme build
+# journey:summary=Generate per-app files for a theme from colors.toml
+# journey:args=<theme-name|--all> [--force] [--dry-run]
+# journey:examples=journey-theme-build catppuccin --force
+
+# How it works:
+#   1. Read `themes/<name>/colors.toml`
+#   2. For each `themes/_templates/<file>`, substitute `{{token}}` placeholders
+#      with the corresponding color value (3 forms per color: hash, no-hash,
+#      "r,g,b").
+#   3. Write the result to `themes/<name>/<file>`.
+#
+# By default, an existing per-app file is left untouched (so a theme can ship
+# a hand-tuned waybar.css that wins over the generated one). Use --force to
+# overwrite.
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+TPL_DIR="$JOURNEY_HOME/themes/_templates"
+
+target=""; force=0; dry_run=0
+while (( $# > 0 )); do
+    case "$1" in
+        --force)   force=1; shift ;;
+        --dry-run) dry_run=1; shift ;;
+        --all)     target="--all"; shift ;;
+        -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+        -*) echo "journey-theme-build: unknown flag: $1" >&2; exit 2 ;;
+        *) [[ -z $target ]] && target="$1" || { echo "multiple themes given" >&2; exit 2; }; shift ;;
+    esac
+done
+[[ -n $target ]] || { echo "usage: journey-theme-build <theme-name|--all> [--force] [--dry-run]" >&2; exit 2; }
+[[ -d $TPL_DIR ]] || { echo "no templates dir at $TPL_DIR" >&2; exit 1; }
+
+# --- helpers ---------------------------------------------------------------
+
+# Convert "#abc123" → "171,193,35"
+hex_to_rgb() {
+    local hex="${1#\#}"
+    printf '%d,%d,%d' "$((16#${hex:0:2}))" "$((16#${hex:2:2}))" "$((16#${hex:4:2}))"
+}
+
+# Parse colors.toml → fills the global C[] map.
+declare -A C
+load_colors() {
+    local file="$1" key val
+    C=()
+    while IFS= read -r line; do
+        [[ $line =~ ^[[:space:]]*# ]] && continue
+        [[ $line =~ ^[[:space:]]*$ ]] && continue
+        key="${line%%=*}"
+        val="${line#*=}"
+        key="${key// /}"
+        val="${val// /}"
+        val="${val//\"/}"
+        [[ -z $key || -z $val ]] && continue
+        C[$key]="$val"
+    done <"$file"
+}
+
+# Render one template with the current C[] map.
+render() {
+    local content="$1" key val rgb
+    for key in "${!C[@]}"; do
+        val="${C[$key]}"
+        content="${content//\{\{$key\}\}/$val}"
+        # _hex and _rgb only make sense for hex color values. theme_name
+        # (and any future non-color token) safely skips both.
+        if [[ $val =~ ^#?[0-9a-fA-F]{6}$ ]]; then
+            content="${content//\{\{${key}_hex\}\}/${val#\#}}"
+            rgb="$(hex_to_rgb "$val")"
+            content="${content//\{\{${key}_rgb\}\}/$rgb}"
+        fi
+    done
+    printf '%s' "$content"
+}
+
+# --- per-theme build ------------------------------------------------------
+
+build_theme() {
+    local theme_dir="$1" name="$(basename "$1")"
+    local colors="$theme_dir/colors.toml"
+    if [[ ! -f $colors ]]; then
+        echo "  skip $name: no colors.toml"
+        return 0
+    fi
+    load_colors "$colors"
+
+    # `theme_name` is a convenience token (for the ghostty preamble etc.).
+    C[theme_name]="$name"
+
+    local tmpl out content basename_t
+    for tmpl in "$TPL_DIR"/*; do
+        basename_t="$(basename "$tmpl")"
+        out="$theme_dir/$basename_t"
+
+        if [[ -e $out ]] && (( ! force )); then
+            # Existing file → check if it's also a generated artifact from a
+            # previous build. We use a small magic comment for that.
+            if head -1 "$out" 2>/dev/null | grep -q "^# journey-theme-build:auto" \
+               || head -2 "$out" 2>/dev/null | grep -q "^# journey-theme-build:auto"; then
+                : # regenerate freely
+            else
+                echo "  keep $name/$basename_t (user override; --force to overwrite)"
+                continue
+            fi
+        fi
+
+        content="$(cat "$tmpl")"
+        content="$(render "$content")"
+        # Stamp the file so future runs know it's auto-generated.
+        case "$basename_t" in
+            *.css|*.toml|*.conf|*.ini)
+                content="# journey-theme-build:auto — regenerate with journey-theme-build $name --force"$'\n'"$content" ;;
+            ghostty|gum.env.conf)
+                content="# journey-theme-build:auto — regenerate with journey-theme-build $name --force"$'\n'"$content" ;;
+        esac
+
+        if (( dry_run )); then
+            echo "  + $name/$basename_t (dry-run)"
+        else
+            printf '%s' "$content" >"$out"
+            echo "  + $name/$basename_t"
+        fi
+    done
+}
+
+# --- main -----------------------------------------------------------------
+
+if [[ $target == "--all" ]]; then
+    for d in "$JOURNEY_HOME"/themes/*/; do
+        name="$(basename "$d")"
+        [[ $name == "_templates" ]] && continue
+        echo "==> $name"
+        build_theme "$d"
+    done
+else
+    dir="$JOURNEY_HOME/themes/$target"
+    [[ -d $dir ]] || { echo "no such theme: $target" >&2; exit 1; }
+    echo "==> $target"
+    build_theme "$dir"
+fi

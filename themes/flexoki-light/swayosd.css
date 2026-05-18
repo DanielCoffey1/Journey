@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build flexoki-light --force
+@define-color background-color #FFFCF0;
+@define-color border-color #100F0F;
+@define-color label #100F0F;
+@define-color image #100F0F;
+@define-color progress #205EA6;

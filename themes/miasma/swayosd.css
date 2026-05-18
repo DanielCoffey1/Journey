@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build miasma --force
+@define-color background-color #222222;
+@define-color border-color #c2c2b0;
+@define-color label #c2c2b0;
+@define-color image #c2c2b0;
+@define-color progress #78824b;

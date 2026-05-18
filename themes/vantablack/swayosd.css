@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build vantablack --force
+@define-color background-color #000000;
+@define-color border-color #ffffff;
+@define-color label #ffffff;
+@define-color image #ffffff;
+@define-color progress #8d8d8d;

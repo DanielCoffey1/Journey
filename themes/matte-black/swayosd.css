@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build matte-black --force
+@define-color background-color #121212;
+@define-color border-color #bebebe;
+@define-color label #bebebe;
+@define-color image #bebebe;
+@define-color progress #e68e0d;

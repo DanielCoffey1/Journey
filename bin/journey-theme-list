@@ -27,6 +27,8 @@ emit() {
     for entry in "$dir"/*/; do
         [[ -d $entry ]] || continue
         name="$(basename "$entry")"
+        # Skip private directories (e.g. _templates).
+        [[ $name == _* ]] && continue
         if (( names_only )); then
             printf '%s\n' "$name"
         else

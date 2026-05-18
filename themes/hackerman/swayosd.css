@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build hackerman --force
+@define-color background-color #0B0C16;
+@define-color border-color #ddf7ff;
+@define-color label #ddf7ff;
+@define-color image #ddf7ff;
+@define-color progress #82FB9C;

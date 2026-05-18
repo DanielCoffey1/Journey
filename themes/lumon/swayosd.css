@@ -1,0 +1,6 @@
+# journey-theme-build:auto — regenerate with journey-theme-build lumon --force
+@define-color background-color #16242d;
+@define-color border-color #d6e2ee;
+@define-color label #d6e2ee;
+@define-color image #d6e2ee;
+@define-color progress #8bc9eb;
