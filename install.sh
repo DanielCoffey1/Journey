@@ -166,12 +166,20 @@ EOF
 
     # Both directories and bare files under default/ get installed as
     # ~/.config/<name>. Existing user content is moved aside (not overwritten),
-    # so reinstalls remain reversible.
+    # so reinstalls remain reversible. If the destination is already byte-for-byte
+    # identical to the source (e.g. the user just ran install.sh twice in a
+    # row), we skip both the backup and the copy — keeps re-installs idempotent
+    # and avoids accumulating *.pre-journey.* directories.
     local entry name dst backup
     for entry in "$JOURNEY_HOME"/default/*; do
         [[ -e $entry ]] || continue
         name="$(basename "$entry")"
         dst="$HOME/.config/$name"
+
+        if [[ -e $dst ]] && diff -rq "$entry" "$dst" >/dev/null 2>&1; then
+            continue
+        fi
+
         if [[ -e $dst && ! -L $dst ]]; then
             backup="${dst}.pre-journey.$(date +%s)"
             warn "Backing up existing $dst → $backup"

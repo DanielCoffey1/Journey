@@ -164,13 +164,13 @@ This README **is** the project todo list. Check items off as they ship. When you
 
 ### Phase 10 — Polish
 
-- [ ] First-run welcome screen
-- [ ] `journey help` polished output (groups, summaries, examples)
-- [ ] CI: shellcheck all `bin/journey-*` scripts
-- [ ] `install.sh` idempotency (re-run-safe)
-- [ ] Uninstaller (`bin/journey-uninstall`)
-- [ ] Hosted install URL + landing page
-- [ ] Hardware detection (NVIDIA, Intel, T2 MacBook, Surface, Dell XPS, Framework16) — install matching driver packages from `packages/system.packages` only when needed
+- [x] First-run welcome screen — `journey-first-run` shows a notify-send tour of core keybinds + a 30s-later tip about user hooks; gated by `~/.local/state/journey/first-run.done`; `--force` reruns
+- [x] `journey help` polished output — metadata-driven (group / summary / args / examples), per-command help via `journey help <cmd>`
+- [x] CI: shellcheck — `.github/workflows/lint.yml` runs `shellcheck -x -S warning` over `bin/`, `hooks/`, `default/waybar/*.sh`, `install.sh` on every push/PR; `bin/journey-lint` runs the same set locally (with `--install`, `--summary` flags)
+- [x] `install.sh` idempotency — `stow_configs` skips entries where `diff -rq src dst` is clean (no needless backup or copy); shell-rc + env.d snippets dedupe themselves; sudo keepalive cleans up via trap
+- [x] `bin/journey-uninstall` — drops stowed configs (restoring `*.pre-journey.*` backups when present), scrubs the env.d snippet + shell rc, re-execs from `/tmp` to remove `$JOURNEY_HOME` from under itself safely. `--purge` also removes `~/.config/journey`; `--keep-configs` leaves stowed configs alone. Sandbox-verified 8/8 checks
+- [x] Hosted install URL + landing page — `install/landing-page.html` (Tokyo Night colored, minimal); `install/README.md` documents the User-Agent-sniff nginx recipe so `curl …get.journey.dev | bash` and a browser visit both work from the same root
+- [x] Hardware detection — `detect_hardware_tags` in `install.sh` reads `lspci` + `/sys/class/dmi/id/{sys_vendor,product_name}` and emits tags (`nvidia / intel / amd / asahi / t2 / surface / dell-xps / asus / framework16 / broadcom`); `packages/system.packages` `[tag]`-suffixed entries are only installed when matching tags are detected
 
 ---
 

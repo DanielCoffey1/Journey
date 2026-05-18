@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Journey Companion — a one-line Arch + Hyprland install</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Replicate a fully-configured Hyprland desktop on vanilla Arch Linux with one shell command.">
+<style>
+  :root {
+    --bg: #1a1b26;
+    --fg: #a9b1d6;
+    --accent: #7aa2f7;
+    --dim: #565f89;
+    --code-bg: #1f2233;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'JetBrains Mono', 'Inter', system-ui, sans-serif;
+    margin: 0;
+    line-height: 1.55;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 6rem 1.5rem 4rem;
+  }
+  h1 { color: var(--accent); font-size: 2.4rem; margin: 0 0 .25rem; }
+  .tag { color: var(--dim); margin-top: 0; }
+  pre {
+    background: var(--code-bg);
+    color: var(--accent);
+    padding: 1rem 1.25rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 1rem;
+  }
+  code { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+  h2 { color: var(--accent); margin-top: 3rem; font-size: 1.2rem; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .25rem 0; }
+  a { color: var(--accent); }
+  footer {
+    color: var(--dim);
+    margin-top: 4rem;
+    font-size: .9rem;
+    border-top: 1px solid var(--dim);
+    padding-top: 1rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Journey Companion</h1>
+  <p class="tag">A from-scratch Hyprland desktop for vanilla Arch Linux. One shell command and you're configured.</p>
+
+  <pre><code>curl -fsSL https://get.journey.dev | bash</code></pre>
+
+  <h2>What you get</h2>
+  <ul>
+    <li>Hyprland tiling WM with sensible binds (SUPER+SPACE launcher, SUPER+ALT+SPACE menu).</li>
+    <li>Walker-based <strong>Journey Companion</strong> launcher.</li>
+    <li>Waybar, mako, SwayOSD, hyprlock, hypridle — pre-themed and wired together.</li>
+    <li>One <code>journey</code> CLI for everything: <code>journey theme set</code>, <code>journey menu system</code>, <code>journey update</code>, …</li>
+    <li>Live theme switching across walker, waybar, mako, swayosd, alacritty, ghostty, foot, btop.</li>
+    <li>Auto-detected hardware drivers (NVIDIA, Intel, T2 MacBook, Surface, Dell XPS, Framework 16, ASUS).</li>
+  </ul>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li>Vanilla Arch Linux, booted to a TTY (no display manager needed for install).</li>
+    <li>An unprivileged user with <code>sudo</code> access.</li>
+  </ul>
+
+  <h2>After install</h2>
+  <pre><code>journey help           # list every subcommand
+journey theme list     # see installed themes
+journey update         # pull Journey + sync packages
+journey uninstall      # clean removal (restores backups)</code></pre>
+
+  <h2>Source</h2>
+  <p>
+    <a href="https://github.com/DanielCoffey1/Journey">github.com/DanielCoffey1/Journey</a>
+  </p>
+
+  <footer>
+    Journey Companion is open source. The install script is a plain bash file — read it first if curl-piping into bash makes you nervous.
+  </footer>
+</main>
+</body>
+</html>

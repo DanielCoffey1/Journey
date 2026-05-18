@@ -1,13 +1,41 @@
 #!/usr/bin/env bash
 # journey:group=setup
 # journey:name=first run
-# journey:summary=One-time post-install setup (idempotent — safe to re-run)
+# journey:summary=One-time welcome notification on the first session after install
+# journey:args=[--force]
+# journey:examples=journey-first-run
 
+# Called from autostart. Marks itself complete via a state file, so it's
+# idempotent on subsequent sessions. --force reruns the notification.
 set -euo pipefail
-STATE="$HOME/.local/state/journey"
-mkdir -p "$STATE"
 
-[[ -f "$STATE/first-run.done" ]] && exit 0
+STATE="$HOME/.local/state/journey/first-run.done"
+mkdir -p "$(dirname "$STATE")"
 
-# Future: onboarding wizard, monitor configuration, github auth, etc.
-touch "$STATE/first-run.done"
+force=0
+[[ "${1:-}" == "--force" ]] && force=1
+(( force )) || [[ ! -f $STATE ]] || exit 0
+
+# Brief landing notification with the most-used keybinds.
+if command -v notify-send >/dev/null; then
+    notify-send -u normal -t 12000 \
+        " Welcome to Journey Companion" \
+        "$(cat <<'EOF'
+SUPER+SPACE         Launcher
+SUPER+ALT+SPACE     Journey menu
+SUPER+K             All keybindings
+SUPER+CTRL+SPACE    Backgrounds
+SUPER+SHIFT+CTRL+SPACE  Themes
+
+Run 'journey help' to explore the CLI.
+EOF
+)" 2>/dev/null || true
+fi
+
+# Schedule a second "tips" notification a beat later so they aren't stacked.
+( sleep 30 && command -v notify-send >/dev/null && \
+    notify-send -u low -t 8000 " Tip" \
+        "Drop your own hook scripts into ~/.config/journey/hooks/" 2>/dev/null || true ) &
+disown 2>/dev/null || true
+
+touch "$STATE"
