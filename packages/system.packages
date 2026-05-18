@@ -68,8 +68,13 @@ intel-media-driver   [intel]
 libva-intel-driver   [intel]
 libvpl               [intel]
 vpl-gpu-rt           [intel]
+
+# NVIDIA: Journey deliberately does NOT install a kernel module here.
+# Modern Arch ships multiple variants (nvidia / nvidia-dkms / nvidia-open /
+# nvidia-open-dkms / nvidia-580xx-dkms / etc.) and the right pick depends on
+# kernel choice + GPU age. Users who installed Arch chose one already;
+# anything else would conflict. Only the userspace libs go here.
 libva-nvidia-driver  [nvidia]
-nvidia               [nvidia]
 nvidia-utils         [nvidia]
 lib32-nvidia-utils   [nvidia]
 
