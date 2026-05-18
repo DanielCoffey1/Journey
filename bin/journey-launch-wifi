@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch wifi
+# journey:summary=Open the WiFi control TUI (impala)
+# journey:examples=journey-launch-wifi
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+if command -v impala >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" impala
+fi
+if command -v nmtui >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" nmtui
+fi
+echo "journey-launch-wifi: no WiFi TUI installed (try: pacman -S impala)" >&2
+exit 1

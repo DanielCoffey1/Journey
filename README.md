@@ -79,14 +79,19 @@ This README **is** the project todo list. Check items off as they ship. When you
 
 ### Phase 6 — Launchers & Helpers
 
-- [ ] `bin/journey-launch-browser`
-- [ ] `bin/journey-launch-editor`
-- [ ] `bin/journey-launch-terminal`
-- [ ] `bin/journey-launch-webapp` (handles `##` → `#` escaping for hyprland binds)
-- [ ] `bin/journey-launch-or-focus` / `journey-launch-or-focus-webapp` / `journey-launch-or-focus-tui`
-- [ ] `bin/journey-launch-tui` (generic TUI app launcher)
-- [ ] `bin/journey-launch-audio` / `journey-launch-bluetooth` / `journey-launch-wifi`
+- [x] `bin/journey-launch-browser` — chromium preferred (`--incognito` for `--private`), firefox / xdg-open fallback chain, honors `$BROWSER`
+- [x] `bin/journey-launch-editor` — honors `$EDITOR`, falls back nvim → hx → vim → vi; runs in `journey-launch-terminal`
+- [x] `bin/journey-launch-terminal` — opens xdg-terminal-exec in the focused window's cwd
+- [x] `bin/journey-launch-webapp` — Chromium `--app=URL`; un-escapes `##` → `#` from hypr binds; `--class` flag
+- [x] `bin/journey-launch-or-focus` — focus by class regex (hyprctl + jq), bare-command fallback
+- [x] `bin/journey-launch-or-focus-webapp` — uses absolute path to `journey-launch-webapp` (PATH-independent)
+- [x] `bin/journey-launch-or-focus-tui` — match by window title
+- [x] `bin/journey-launch-tui` — wraps `journey-launch-terminal`
+- [x] `bin/journey-launch-audio` (wiremix → pulsemixer → alsamixer)
+- [x] `bin/journey-launch-bluetooth` (bluetui → bluetuith → bluetoothctl)
+- [x] `bin/journey-launch-wifi` (impala → nmtui)
 - [x] `bin/journey-cmd-terminal-cwd` — falls back to `$HOME` when hyprctl/jq missing
+- [x] `install.sh` writes `~/.config/environment.d/10-journey.conf` so systemd user / uwsm-app / hyprland exec see `JOURNEY_HOME/bin` on `$PATH`
 
 ### Phase 7 — System Integration
 

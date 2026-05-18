@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch terminal
+# journey:summary=Open a new terminal in the focused window's cwd
+# journey:args=[command [args...]]
+# journey:examples=journey-launch-terminal htop
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+cwd="$("$BIN_DIR/journey-cmd-terminal-cwd")"
+
+if command -v uwsm-app >/dev/null; then
+    exec uwsm-app -- xdg-terminal-exec --dir="$cwd" "$@"
+else
+    exec xdg-terminal-exec --dir="$cwd" "$@"
+fi

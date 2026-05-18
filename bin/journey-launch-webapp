@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch webapp
+# journey:summary=Open a URL as a Chromium app window (no chrome UI)
+# journey:args=<url> [--class NAME]
+# journey:examples=journey-launch-webapp "https://chatgpt.com"
+
+# Notes on the `##` → `#` escape:
+#   Hyprland treats `#` as the start of a comment, so URLs containing a
+#   literal `#` must be typed as `##` in bindings.conf. We translate back here.
+
+set -euo pipefail
+
+class=""
+url=""
+while (( $# > 0 )); do
+    case "$1" in
+        --class) class="$2"; shift 2 ;;
+        -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+        *)
+            [[ -z $url ]] || { echo "journey-launch-webapp: multiple URLs given" >&2; exit 2; }
+            url="$1"; shift ;;
+    esac
+done
+[[ -n $url ]] || { echo "usage: journey-launch-webapp <url>" >&2; exit 2; }
+
+# Un-escape ## → #
+url="${url//\#\#/\#}"
+
+if ! command -v chromium >/dev/null; then
+    echo "journey-launch-webapp: chromium not installed (required for app windows)" >&2
+    exit 1
+fi
+
+args=("--app=$url")
+[[ -n $class ]] && args+=("--class=$class")
+
+if command -v uwsm-app >/dev/null; then
+    exec uwsm-app -- chromium "${args[@]}"
+else
+    exec chromium "${args[@]}"
+fi

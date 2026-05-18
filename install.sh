@@ -164,8 +164,12 @@ stow_configs() {
 }
 
 link_path() {
-    # Add ~/.local/share/journey/bin to PATH via a small shell snippet.
-    local snippet="$HOME/.config/journey/path.sh"
+    # Make $JOURNEY_HOME/bin discoverable from three places:
+    #   1. Interactive shells (.bashrc / .zshrc, via path.sh)
+    #   2. systemd user units & uwsm-app launches (environment.d)
+    #   3. hyprland's exec environment (inherits from systemd user env)
+    local snippet="$JOURNEY_CONFIG/path.sh"
+    mkdir -p "$JOURNEY_CONFIG"
     cat >"$snippet" <<EOF
 # Added by Journey Companion installer
 case ":\$PATH:" in
@@ -179,6 +183,14 @@ EOF
         grep -qF "$snippet" "$rc" 2>/dev/null && continue
         printf '\n# Journey Companion\n[ -f %q ] && . %q\n' "$snippet" "$snippet" >>"$rc"
     done
+
+    # systemd user env — picked up by uwsm-app, hyprland exec-once, etc.
+    mkdir -p "$HOME/.config/environment.d"
+    cat >"$HOME/.config/environment.d/10-journey.conf" <<EOF
+# Added by Journey Companion installer.
+# Re-running install.sh overwrites this file.
+PATH=$JOURNEY_HOME/bin:\${PATH}
+EOF
 }
 
 apply_default_theme() {

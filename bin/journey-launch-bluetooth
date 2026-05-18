@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch bluetooth
+# journey:summary=Open the Bluetooth control TUI (bluetui)
+# journey:examples=journey-launch-bluetooth
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+if command -v bluetui >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" bluetui
+fi
+if command -v bluetuith >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" bluetuith
+fi
+if command -v bluetoothctl >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" bluetoothctl
+fi
+echo "journey-launch-bluetooth: no Bluetooth TUI installed (try: pacman -S bluetui)" >&2
+exit 1

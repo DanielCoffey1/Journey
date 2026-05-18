@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch editor
+# journey:summary=Open $EDITOR (or nvim / helix) in a new terminal
+# journey:args=[file...]
+# journey:examples=journey-launch-editor README.md
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+# $EDITOR may be set to something like "nvim", "nvim -p", etc.; split on spaces.
+editor=""
+if [[ -n ${EDITOR:-} ]] && command -v "${EDITOR%% *}" >/dev/null; then
+    editor="$EDITOR"
+elif command -v nvim >/dev/null; then
+    editor=nvim
+elif command -v hx >/dev/null; then
+    editor=hx
+elif command -v vim >/dev/null; then
+    editor=vim
+elif command -v vi >/dev/null; then
+    editor=vi
+else
+    echo "journey-launch-editor: no editor found" >&2
+    exit 1
+fi
+
+exec "$BIN_DIR/journey-launch-terminal" $editor "$@"

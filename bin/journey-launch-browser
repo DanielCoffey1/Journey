@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch browser
+# journey:summary=Launch the default browser (chromium preferred; honors --private and URL args)
+# journey:args=[--private] [url...]
+# journey:examples=journey-launch-browser --private https://example.com
+
+set -euo pipefail
+
+private=0
+extra=()
+for arg in "$@"; do
+    case "$arg" in
+        --private|--incognito) private=1 ;;
+        *) extra+=("$arg") ;;
+    esac
+done
+
+# Pick a browser. $BROWSER wins, then chromium, then firefox, then xdg-open.
+browser=""
+if [[ -n ${BROWSER:-} ]] && command -v "${BROWSER%% *}" >/dev/null; then
+    browser="$BROWSER"
+elif command -v chromium >/dev/null; then
+    browser=chromium
+elif command -v firefox >/dev/null; then
+    browser=firefox
+elif command -v xdg-open >/dev/null; then
+    # xdg-open ignores --private and extra flags but at least handles URLs
+    for url in "${extra[@]}"; do uwsm-app -- xdg-open "$url" & done
+    exit 0
+else
+    echo "journey-launch-browser: no browser found" >&2
+    exit 1
+fi
+
+flags=()
+case "$browser" in
+    chromium*) (( private )) && flags+=(--incognito) ;;
+    firefox*)  (( private )) && flags+=(--private-window) ;;
+esac
+
+if command -v uwsm-app >/dev/null; then
+    exec uwsm-app -- $browser "${flags[@]}" "${extra[@]}"
+else
+    exec $browser "${flags[@]}" "${extra[@]}"
+fi

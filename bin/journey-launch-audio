@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch audio
+# journey:summary=Open the audio mixer TUI (wiremix)
+# journey:examples=journey-launch-audio
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+if command -v wiremix >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" wiremix
+fi
+if command -v pulsemixer >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" pulsemixer
+fi
+if command -v alsamixer >/dev/null; then
+    exec "$BIN_DIR/journey-launch-tui" alsamixer
+fi
+echo "journey-launch-audio: no audio TUI installed (try: pacman -S wiremix)" >&2
+exit 1

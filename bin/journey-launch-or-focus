@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch or-focus
+# journey:summary=Focus an existing window matching a class regex, else run the launch command
+# journey:args=<class-regex> [launch-command]
+# journey:examples=journey-launch-or-focus ^obsidian$ "uwsm-app -- obsidian"
+
+# If `launch-command` is omitted, the regex is also used as the command to run.
+# This is how Omarchy handles e.g. `journey-launch-or-focus spotify` — looks
+# for a window with class matching `spotify`, runs `spotify` if none found.
+
+set -euo pipefail
+
+regex="${1:?class regex required}"
+launch="${2:-}"
+
+if command -v hyprctl >/dev/null && command -v jq >/dev/null; then
+    addr="$(hyprctl clients -j 2>/dev/null | jq -r --arg re "$regex" '
+        [.[] | select((.class // "") | test($re; "i"))] | sort_by(-(.focusHistoryID // 0)) | .[0].address // empty
+    ')"
+    if [[ -n $addr ]]; then
+        exec hyprctl dispatch focuswindow "address:$addr"
+    fi
+fi
+
+# Nothing to focus — launch.
+if [[ -z $launch ]]; then
+    # Use the regex stripped of anchors as a bare command.
+    cmd="${regex//^/}"
+    cmd="${cmd//\$/}"
+    if command -v uwsm-app >/dev/null && command -v "$cmd" >/dev/null; then
+        exec uwsm-app -- "$cmd"
+    fi
+    exec "$cmd"
+fi
+
+# Honor the user-supplied launch command exactly — shell-evaluate so things
+# like `uwsm-app -- signal-desktop` work as written in bindings.conf.
+exec sh -c "$launch"

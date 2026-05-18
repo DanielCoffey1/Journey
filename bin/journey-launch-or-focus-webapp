@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# journey:group=launch
+# journey:name=launch or-focus-webapp
+# journey:summary=Focus an existing Chromium webapp window by class name, else open it
+# journey:args=<class-name> <url>
+# journey:examples=journey-launch-or-focus-webapp WhatsApp "https://web.whatsapp.com/"
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+name="${1:?webapp class name required}"
+url="${2:?webapp URL required}"
+
+# Chromium app windows expose --class as their Wayland app_id. Anchor the
+# regex so partial matches don't grab unrelated browser windows.
+# Use the absolute path so the launch command resolves regardless of $PATH
+# in the spawned shell (hyprland's exec environment can be minimal).
+exec "$BIN_DIR/journey-launch-or-focus" "^${name}$" "$BIN_DIR/journey-launch-webapp \"$url\" --class \"$name\""
