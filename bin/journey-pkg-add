@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# journey:group=pkg
+# journey:name=pkg add
+# journey:summary=Install one or more packages, auto-routing between pacman and yay
+# journey:args=[--repo|--aur] [--yes] <pkg...>
+# journey:examples=journey-pkg-add neovim visual-studio-code-bin
+
+# Default behavior: each package is probed with `pacman -Si`; matches go to
+# pacman, misses go to yay (AUR). --repo / --aur force one route for all args.
+set -euo pipefail
+
+force=""; yes=0; pkgs=()
+while (( $# > 0 )); do
+    case "$1" in
+        --repo) force=repo; shift ;;
+        --aur)  force=aur;  shift ;;
+        --yes|-y) yes=1; shift ;;
+        -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+        -*) echo "journey-pkg-add: unknown flag: $1" >&2; exit 2 ;;
+        *)  pkgs+=("$1"); shift ;;
+    esac
+done
+[[ ${#pkgs[@]} -gt 0 ]] || { echo "usage: journey-pkg-add [--repo|--aur] [--yes] <pkg...>" >&2; exit 2; }
+
+repo_pkgs=(); aur_pkgs=()
+if [[ $force == repo ]]; then
+    repo_pkgs=("${pkgs[@]}")
+elif [[ $force == aur ]]; then
+    aur_pkgs=("${pkgs[@]}")
+else
+    # Probe pacman's package DB for each one.
+    for pkg in "${pkgs[@]}"; do
+        if pacman -Si "$pkg" >/dev/null 2>&1; then
+            repo_pkgs+=("$pkg")
+        else
+            aur_pkgs+=("$pkg")
+        fi
+    done
+fi
+
+confirm=(); (( yes )) && confirm=(--noconfirm)
+
+if (( ${#repo_pkgs[@]} > 0 )); then
+    echo "==> pacman: ${repo_pkgs[*]}"
+    sudo pacman -S --needed "${confirm[@]}" "${repo_pkgs[@]}"
+fi
+if (( ${#aur_pkgs[@]} > 0 )); then
+    command -v yay >/dev/null || { echo "yay not installed; can't install AUR packages: ${aur_pkgs[*]}" >&2; exit 1; }
+    echo "==> yay (AUR): ${aur_pkgs[*]}"
+    yay -S --needed "${confirm[@]}" "${aur_pkgs[@]}"
+fi

@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# journey:group=update
+# journey:name=update
+# journey:summary=Pull Journey, apply migrations, sync packages, run post-update hooks
+# journey:args=[--check] [--no-system] [--no-aur] [--yes]
+# journey:examples=journey-update
+
+# Phases — any can be skipped with a flag:
+#   1. git pull on $JOURNEY_HOME            (skip with --no-pull)
+#   2. journey-migrate                      (no-op when nothing pending)
+#   3. pacman -S --needed against base/system package lists  (skip --no-packages)
+#   4. yay   -S --needed against aur package list            (skip --no-aur)
+#   5. sudo pacman -Syu  +  yay -Sua        (skip with --no-system)
+#   6. journey-hook post-update
+#
+# --check     show what would be pulled/updated, do not change anything
+# --yes       pass --noconfirm to pacman/yay
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+BIN_DIR="$JOURNEY_HOME/bin"
+
+# Flag parsing
+check=0; do_pull=1; do_packages=1; do_aur=1; do_system=1; yes=0
+while (( $# > 0 )); do
+    case "$1" in
+        --check)       check=1; shift ;;
+        --no-pull)     do_pull=0; shift ;;
+        --no-packages) do_packages=0; shift ;;
+        --no-aur)      do_aur=0; shift ;;
+        --no-system)   do_system=0; shift ;;
+        --yes|-y)      yes=1; shift ;;
+        -h|--help)     sed -n '2,18p' "$0"; exit 0 ;;
+        *) echo "journey-update: unknown flag: $1" >&2; exit 2 ;;
+    esac
+done
+
+c_blue=$'\033[1;34m'; c_dim=$'\033[2m'; c_reset=$'\033[0m'
+step() { printf '%s==>%s %s\n' "$c_blue" "$c_reset" "$*"; }
+note() { printf '%s    %s%s\n' "$c_dim" "$*" "$c_reset"; }
+
+confirm=(); (( yes )) && confirm=(--noconfirm)
+needs_reboot=0
+
+# --- 1. git pull -----------------------------------------------------------
+if (( do_pull )); then
+    if [[ -d $JOURNEY_HOME/.git ]]; then
+        step "Pulling Journey from origin"
+        if ! git -C "$JOURNEY_HOME" fetch --quiet origin 2>/tmp/journey-update-fetch.$$; then
+            note "git fetch failed — skipping pull. Details:"
+            sed 's/^/    /' /tmp/journey-update-fetch.$$ >&2 || true
+            rm -f /tmp/journey-update-fetch.$$
+        else
+            rm -f /tmp/journey-update-fetch.$$
+            local_sha="$(git -C "$JOURNEY_HOME" rev-parse HEAD)"
+            remote_sha="$(git -C "$JOURNEY_HOME" rev-parse '@{u}' 2>/dev/null || echo "$local_sha")"
+            if [[ $local_sha == "$remote_sha" ]]; then
+                note "Already up to date ($local_sha)"
+            else
+                git -C "$JOURNEY_HOME" --no-pager log --oneline "$local_sha..$remote_sha" | head -20 | sed 's/^/    /'
+                if (( check )); then
+                    note "(--check) would fast-forward to $remote_sha"
+                else
+                    git -C "$JOURNEY_HOME" merge --ff-only "$remote_sha"
+                fi
+            fi
+        fi
+    else
+        note "Not a git checkout — skipping pull"
+    fi
+fi
+
+# --- 2. migrations ---------------------------------------------------------
+if [[ -x $BIN_DIR/journey-migrate ]]; then
+    step "Applying pending migrations"
+    if (( check )); then
+        "$BIN_DIR/journey-migrate" --list
+    else
+        "$BIN_DIR/journey-migrate"
+    fi
+fi
+
+# --- 3 & 4. journey package lists -----------------------------------------
+read_list() {
+    local file="$1"
+    [[ -f $file ]] || return 0
+    awk '
+        /^[[:space:]]*#/ { next }
+        /^[[:space:]]*$/ { next }
+        {
+            sub(/[[:space:]]+#.*$/, "")
+            sub(/\[[a-zA-Z0-9_-]+\][[:space:]]*$/, "")
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+            if ($0 != "") print
+        }
+    ' "$file"
+}
+
+if (( do_packages )); then
+    step "Syncing base packages from packages/base.packages"
+    mapfile -t base < <(read_list "$JOURNEY_HOME/packages/base.packages")
+    if (( ${#base[@]} > 0 )); then
+        if (( check )); then
+            note "(--check) would: sudo pacman -S --needed ${base[*]:0:5} ... (+${#base[@]} total)"
+        else
+            sudo pacman -S --needed "${confirm[@]}" "${base[@]}"
+        fi
+    fi
+fi
+
+if (( do_aur )); then
+    step "Syncing AUR packages from packages/aur.packages"
+    mapfile -t aur < <(read_list "$JOURNEY_HOME/packages/aur.packages")
+    if (( ${#aur[@]} > 0 )) && command -v yay >/dev/null; then
+        if (( check )); then
+            note "(--check) would: yay -S --needed ${aur[*]}"
+        else
+            yay -S --needed "${confirm[@]}" "${aur[@]}"
+        fi
+    fi
+fi
+
+# --- 5. system upgrade -----------------------------------------------------
+if (( do_system )); then
+    step "Upgrading system (pacman -Syu)"
+    if (( check )); then
+        note "(--check) would: sudo pacman -Syu"
+    else
+        # Check whether the kernel or hyprland is among the upgrades so we
+        # can suggest a reboot at the end.
+        if sudo pacman -Sup 2>/dev/null | grep -qE '/(linux|linux-lts|linux-zen|linux-t2|hyprland)-[0-9]'; then
+            needs_reboot=1
+        fi
+        sudo pacman -Syu "${confirm[@]}"
+    fi
+
+    if command -v yay >/dev/null; then
+        step "Upgrading AUR (yay -Sua)"
+        if (( check )); then
+            note "(--check) would: yay -Sua"
+        else
+            yay -Sua "${confirm[@]}" || true
+        fi
+    fi
+fi
+
+# --- 6. post-update hooks --------------------------------------------------
+if [[ -x $BIN_DIR/journey-hook ]] && (( ! check )); then
+    step "Running post-update hooks"
+    "$BIN_DIR/journey-hook" post-update || true
+fi
+
+if (( needs_reboot )) && (( ! check )); then
+    step "Reboot recommended (kernel or hyprland upgraded)"
+fi

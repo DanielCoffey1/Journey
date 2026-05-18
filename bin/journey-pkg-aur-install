@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# journey:group=pkg
+# journey:name=pkg aur-install
+# journey:summary=Install an AUR-only package (alias for `journey-pkg-add --aur ...`)
+# journey:args=<pkg...>
+# journey:examples=journey-pkg-aur-install obsidian
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+exec "$BIN_DIR/journey-pkg-add" --aur "$@"

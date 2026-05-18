@@ -149,10 +149,12 @@ This README **is** the project todo list. Check items off as they ship. When you
 
 ### Phase 9 — Package & Update Flow
 
-- [ ] `bin/journey-pkg-add` / `journey-pkg-remove` / `journey-pkg-aur-install`
-- [ ] `bin/journey-update` — `git pull` + run pacman/yay + run `post-update` hook
+- [x] `bin/journey-pkg-add` — auto-routes between pacman and yay; `--repo`/`--aur` force, `--yes` for noconfirm
+- [x] `bin/journey-pkg-remove` — `pacman -Rs` (handles pacman + yay installs uniformly); `--purge` adds `-nc`
+- [x] `bin/journey-pkg-aur-install` — alias for `journey-pkg-add --aur ...`
+- [x] `bin/journey-update` — 6 phases: pull → migrate → base pkgs → AUR pkgs → system upgrade (`pacman -Syu` + `yay -Sua`) → `post-update` hook. Flags: `--check`, `--no-pull`, `--no-packages`, `--no-aur`, `--no-system`, `--yes`. Suggests reboot when kernel or hyprland was upgraded. Network failures on `git fetch` degrade gracefully (continue to local steps).
 - [x] `bin/journey-version` — print version
-- [ ] `bin/journey-migrate` — schema migrations between Journey versions
+- [x] `bin/journey-migrate` — runs `install/migrations/NNN-*.sh` scripts in numeric order; tracks state in `~/.local/state/journey/migrations.done`. Per-file idempotency; abort on first failure
 
 ### Phase 10 — Polish
 

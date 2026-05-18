@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# journey:group=pkg
+# journey:name=pkg remove
+# journey:summary=Remove one or more packages (pacman -Rs; handles pacman + yay installs)
+# journey:args=[--yes] [--purge] <pkg...>
+# journey:examples=journey-pkg-remove neovim
+
+# pacman uniformly tracks pacman- and yay-installed packages, so -Rs works for
+# both. --purge adds -n (drop config files) and -c (cascade dependents).
+set -euo pipefail
+
+yes=0; purge=0; pkgs=()
+while (( $# > 0 )); do
+    case "$1" in
+        --yes|-y) yes=1; shift ;;
+        --purge)  purge=1; shift ;;
+        -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+        -*) echo "journey-pkg-remove: unknown flag: $1" >&2; exit 2 ;;
+        *)  pkgs+=("$1"); shift ;;
+    esac
+done
+[[ ${#pkgs[@]} -gt 0 ]] || { echo "usage: journey-pkg-remove [--yes] [--purge] <pkg...>" >&2; exit 2; }
+
+flags=(-Rs)
+(( purge )) && flags=(-Rsnc)
+(( yes ))   && flags+=(--noconfirm)
+
+exec sudo pacman "${flags[@]}" "${pkgs[@]}"
