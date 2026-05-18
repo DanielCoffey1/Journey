@@ -27,14 +27,17 @@ fi
 # Root menu — enumerate submenus, let the user pick.
 declare -A labels=(
     [system]="    System (power)"
-    [capture]="   Capture (screenshot / record)"
+    [capture]="   Capture (screenshot)"
+    [screenrecord]="    Screen record"
     [keybindings]="    Keybindings"
     [theme]="    Theme"
     [background]="    Background"
     [toggle]="    Toggle"
     [hardware]="    Hardware"
+    [share]="    Share (LocalSend)"
+    [reminder-set]="    New reminder"
 )
-order=(system capture keybindings theme background toggle hardware)
+order=(system capture screenrecord keybindings theme background toggle hardware share reminder-set)
 
 items=""
 for key in "${order[@]}"; do

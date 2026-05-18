@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# journey:group=brightness
+# journey:name=brightness display
+# journey:summary=Adjust display backlight (brightnessctl syntax) with an OSD popup
+# journey:args=<delta>
+# journey:examples=journey-brightness-display +5%
+
+set -euo pipefail
+command -v brightnessctl >/dev/null || { echo "brightnessctl not installed" >&2; exit 1; }
+delta="${1:?usage: journey-brightness-display <+N%|N%-|N%>}"
+
+brightnessctl --quiet set "$delta"
+
+# Show an OSD. swayosd-client doesn't accept absolute % through this entry
+# point so we send a synced notification with the new level instead.
+level="$(brightnessctl --quiet get --percentage 2>/dev/null || true)"
+if [[ -z $level ]]; then
+    # Older brightnessctl: percentage = (current * 100) / max
+    cur="$(brightnessctl get 2>/dev/null)"
+    max="$(brightnessctl max 2>/dev/null)"
+    [[ -n $cur && -n $max && $max -gt 0 ]] && level=$(( cur * 100 / max ))
+fi
+[[ -z $level ]] && level="?"
+
+if command -v notify-send >/dev/null; then
+    notify-send -u low -t 1500 \
+        -h "string:x-canonical-private-synchronous:brightness" \
+        -h "int:value:$level" \
+        " Brightness" "${level}%" 2>/dev/null || true
+fi

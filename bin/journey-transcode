@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# journey:group=media
+# journey:name=transcode
+# journey:summary=Transcode a media file (placeholder — full ffmpeg menu coming in a later phase)
+# journey:args=<input>
+# journey:examples=journey-transcode video.mov
+
+# Bound to SUPER+CTRL+. in the default keybinds. For now this just notifies —
+# a richer menu (codecs, presets, output path) will land alongside the rest of
+# the Phase 8 application configs.
+set -euo pipefail
+command -v notify-send >/dev/null && notify-send -u low " Transcode" "Not implemented yet" || \
+    echo "journey-transcode: not implemented yet"

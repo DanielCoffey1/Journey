@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# journey:group=toggle
+# journey:name=toggle waybar
+# journey:summary=Show / hide the top bar (waybar)
+# journey:examples=journey-toggle-waybar
+
+# Marker file makes the choice persist across hypr restarts:
+# autostart.conf checks `journey-toggle-enabled waybar-off` before spawning waybar.
+set -euo pipefail
+STATE="$HOME/.local/state/journey/toggles"
+mkdir -p "$STATE"
+marker="$STATE/waybar-off"
+
+if [[ -e $marker ]]; then
+    rm -f "$marker"
+    if command -v uwsm-app >/dev/null; then
+        setsid uwsm-app -- waybar >/dev/null 2>&1 &
+    else
+        setsid waybar >/dev/null 2>&1 &
+    fi
+else
+    : >"$marker"
+    pkill -x waybar 2>/dev/null || true
+fi

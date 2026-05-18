@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# journey:group=system
+# journey:name=system lock
+# journey:summary=Lock the screen (hyprlock; loginctl fallback)
+# journey:examples=journey-system-lock
+
+set -euo pipefail
+if command -v hyprlock >/dev/null; then
+    # Don't stack multiple lockers
+    pgrep -x hyprlock >/dev/null && exit 0
+    exec hyprlock
+fi
+if command -v loginctl >/dev/null; then
+    exec loginctl lock-session
+fi
+echo "journey-system-lock: no locker available" >&2
+exit 1

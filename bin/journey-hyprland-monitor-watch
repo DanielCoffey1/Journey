@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland monitor-watch
+# journey:summary=Re-apply monitor config when a monitor is hot-plugged
+# journey:examples=journey-hyprland-monitor-watch
+
+# Listens on Hyprland's event socket (.socket2.sock) for monitor add/remove
+# events. On each change, reloads hyprland so any user monitor rules take
+# effect for the new layout.
+set -euo pipefail
+
+: "${HYPRLAND_INSTANCE_SIGNATURE:?journey-hyprland-monitor-watch must run inside a Hyprland session}"
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"
+
+SOCK="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+if [[ ! -S $SOCK ]]; then
+    echo "journey-hyprland-monitor-watch: socket missing ($SOCK)" >&2
+    exit 1
+fi
+
+if ! command -v socat >/dev/null; then
+    echo "journey-hyprland-monitor-watch: socat required" >&2
+    exit 1
+fi
+
+handle() {
+    local event="$1"
+    case "$event" in
+        monitoradded\>\>*|monitorremoved\>\>*|monitoraddedv2\>\>*|monitorremovedv2\>\>*)
+            # A small debounce: a single hotplug often emits several events.
+            sleep 0.3
+            hyprctl reload >/dev/null 2>&1 || true
+            ;;
+    esac
+}
+
+while IFS= read -r line; do
+    handle "$line"
+done < <(socat -u UNIX-CONNECT:"$SOCK" - 2>/dev/null)

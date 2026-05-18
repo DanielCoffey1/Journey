@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland monitor-scaling-cycle
+# journey:summary=Cycle the focused monitor's scaling factor
+# journey:args=[--reverse]
+# journey:examples=journey-hyprland-monitor-scaling-cycle
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+command -v jq      >/dev/null || exit 0
+
+reverse=0
+[[ "${1:-}" == "--reverse" ]] && reverse=1
+
+read -r name cur < <(hyprctl monitors -j | jq -r '.[] | select(.focused) | "\(.name) \(.scale)"')
+[[ -z $name ]] && exit 0
+
+scales=(1.0 1.25 1.5 1.666667 1.75 2.0)
+# Find closest current index (string compare works because we control the list).
+idx=0
+for i in "${!scales[@]}"; do
+    [[ "${scales[$i]}" == "$cur" ]] && idx=$i
+done
+if (( reverse )); then
+    next=$(( (idx - 1 + ${#scales[@]}) % ${#scales[@]} ))
+else
+    next=$(( (idx + 1) % ${#scales[@]} ))
+fi
+scale="${scales[$next]}"
+
+hyprctl keyword "monitor=$name,preferred,auto,$scale" >/dev/null 2>&1 || true
+command -v notify-send >/dev/null && notify-send -u low -t 1500 " Scale" "$name → ${scale}x" || true

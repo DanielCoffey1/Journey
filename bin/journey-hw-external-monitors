@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# journey:group=hw
+# journey:name=hw external-monitors
+# journey:summary=Exit 0 if any non-internal monitor is connected, 1 otherwise
+# journey:examples=journey-hw-external-monitors && journey-hyprland-monitor-internal off
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 1
+command -v jq      >/dev/null || exit 1
+
+hyprctl monitors -j | jq -e '
+    [.[] | select((.name // "") | test("eDP|LVDS|DSI"; "i") | not)] | length > 0
+' >/dev/null

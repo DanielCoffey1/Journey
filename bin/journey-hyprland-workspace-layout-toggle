@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland workspace-layout-toggle
+# journey:summary=Cycle workspace layout (dwindle → master → scrolling → dwindle)
+# journey:examples=journey-hyprland-workspace-layout-toggle
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+command -v jq      >/dev/null || exit 0
+
+current="$(hyprctl getoption -j general:layout | jq -r '.str // "dwindle"')"
+case "$current" in
+    dwindle)   next="master"   ;;
+    master)    next="scrolling";;
+    scrolling) next="dwindle"  ;;
+    *)         next="dwindle"  ;;
+esac
+
+hyprctl keyword general:layout "$next" >/dev/null 2>&1 || true
+command -v notify-send >/dev/null && notify-send -u low -t 1500 "Layout" "$next" || true

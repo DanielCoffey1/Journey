@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# journey:group=status
+# journey:name=battery status
+# journey:summary=Print battery charge + status (for waybar / notifications)
+# journey:examples=notify-send "$(journey-battery-status)"
+
+set -euo pipefail
+
+print_battery() {
+    local bat cap status time_remaining
+    for bat in /sys/class/power_supply/BAT*; do
+        [[ -d $bat ]] || continue
+        cap="$(<"$bat/capacity" 2>/dev/null || echo "?")"
+        status="$(<"$bat/status" 2>/dev/null || echo "?")"
+        printf '%s: %s%% (%s)' "$(basename "$bat")" "$cap" "$status"
+
+        # Estimate remaining time from current draw, if available.
+        if command -v acpi >/dev/null; then
+            time_remaining="$(acpi -b 2>/dev/null | sed -n "s/.*\\([0-9][0-9]:[0-9][0-9]\\).*/\\1/p" | head -1)"
+            [[ -n $time_remaining ]] && printf ' — %s remaining' "$time_remaining"
+        fi
+        printf '\n'
+    done
+}
+
+out="$(print_battery)"
+if [[ -z $out ]]; then
+    echo "No battery detected"
+    exit 0
+fi
+printf '%s' "$out"

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu screenrecord
+# journey:summary=Screen recording — start or stop (gpu-screen-recorder)
+# journey:examples=journey-menu screenrecord
+
+# Single-binding pattern: first invocation starts a recording (region picker
+# via slurp), second invocation stops the running one. Hyprland binding is
+# ALT+PRINT, so users can hit the same chord twice to capture a clip.
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+STATE="$HOME/.local/state/journey"
+mkdir -p "$STATE"
+pid_file="$STATE/screenrecord.pid"
+out_file="$STATE/screenrecord.out"
+
+# If a recording is in progress, stop it.
+if [[ -f $pid_file ]] && kill -0 "$(<"$pid_file")" 2>/dev/null; then
+    pid="$(<"$pid_file")"
+    saved="$(<"$out_file" 2>/dev/null || true)"
+    kill -SIGINT "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    rm -f "$pid_file" "$out_file"
+    command -v notify-send >/dev/null && notify-send -u low " Recording stopped" "${saved:-saved}" || true
+    exit 0
+fi
+
+command -v gpu-screen-recorder >/dev/null || {
+    command -v notify-send >/dev/null && notify-send -u critical " Recording" "gpu-screen-recorder not installed"
+    exit 1
+}
+
+DEST_DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}/Recordings"
+mkdir -p "$DEST_DIR"
+stamp="$(date +'%Y-%m-%d_%H-%M-%S')"
+dest="$DEST_DIR/recording-$stamp.mp4"
+
+# Capture target: -w screen records the focused screen. Region selection isn't
+# directly supported by gpu-screen-recorder, so we use the whole screen.
+gpu-screen-recorder -w screen -f 60 -a default_output -o "$dest" >/dev/null 2>&1 &
+echo $! >"$pid_file"
+echo "$dest" >"$out_file"
+
+command -v notify-send >/dev/null && notify-send -u low " Recording started" "Press the same shortcut to stop" || true

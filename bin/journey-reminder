@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# journey:group=reminder
+# journey:name=reminder
+# journey:summary=Quick text reminders — add / show / clear (no scheduling yet)
+# journey:args=add <text…> | show | clear | list
+# journey:examples=journey-reminder add Pay rent on Friday
+
+set -euo pipefail
+STORE="$HOME/.local/state/journey/reminders.txt"
+mkdir -p "$(dirname "$STORE")"
+[[ -f $STORE ]] || : >"$STORE"
+
+action="${1:-show}"; shift || true
+
+case "$action" in
+    add)
+        text="$*"
+        [[ -z $text ]] && { echo "usage: journey-reminder add <text…>" >&2; exit 2; }
+        printf '%s\t%s\n' "$(date -Iseconds)" "$text" >>"$STORE"
+        ;;
+    show|list)
+        if [[ ! -s $STORE ]]; then
+            command -v notify-send >/dev/null && notify-send -u low " Reminders" "(none)" || echo "(none)"
+            exit 0
+        fi
+        body="$(awk -F'\t' '{printf "• %s\n", $2}' "$STORE")"
+        if command -v notify-send >/dev/null && [[ $action == "show" ]]; then
+            notify-send -u normal " Reminders" "$body"
+        else
+            printf '%s\n' "$body"
+        fi
+        ;;
+    clear)
+        : >"$STORE"
+        command -v notify-send >/dev/null && notify-send -u low " Reminders" "Cleared" || true
+        ;;
+    *)
+        echo "usage: journey-reminder [add <text…>|show|list|clear]" >&2
+        exit 2
+        ;;
+esac

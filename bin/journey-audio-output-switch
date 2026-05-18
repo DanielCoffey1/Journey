@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# journey:group=audio
+# journey:name=audio output-switch
+# journey:summary=Cycle to the next audio output sink
+# journey:examples=journey-audio-output-switch
+
+set -euo pipefail
+command -v pactl >/dev/null || { echo "pactl not installed (need pipewire-pulse)" >&2; exit 1; }
+
+current="$(pactl get-default-sink)"
+mapfile -t sinks < <(pactl list short sinks | awk '{print $2}')
+(( ${#sinks[@]} >= 2 )) || { command -v notify-send >/dev/null && notify-send -u low " Audio output" "Only one sink available" || true; exit 0; }
+
+# Find the index of the current sink, pick the next (wrap to first at end).
+next="${sinks[0]}"
+for i in "${!sinks[@]}"; do
+    if [[ "${sinks[$i]}" == "$current" ]]; then
+        next="${sinks[$(( (i + 1) % ${#sinks[@]} ))]}"
+        break
+    fi
+done
+
+pactl set-default-sink "$next"
+
+# Friendly name for the notification.
+label="$(pactl list sinks 2>/dev/null | awk -v s="$next" '
+    /^Sink #/ { in_sink=0 }
+    $1=="Name:" && $2==s { in_sink=1 }
+    in_sink && $1=="Description:" { $1=""; sub(/^ /,""); print; exit }
+')"
+[[ -z $label ]] && label="$next"
+
+command -v notify-send >/dev/null && notify-send -u low " Audio output" "$label" || true

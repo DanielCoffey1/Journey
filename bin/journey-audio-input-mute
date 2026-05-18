@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# journey:group=audio
+# journey:name=audio input-mute
+# journey:summary=Toggle microphone mute, with OSD
+# journey:examples=journey-audio-input-mute
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+# Prefer the swayosd path so the OSD pops up the same way as volume changes.
+if command -v swayosd-client >/dev/null; then
+    exec "$BIN_DIR/journey-swayosd-client" --input-volume mute-toggle
+fi
+
+if command -v wpctl >/dev/null; then
+    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+    state="muted"
+    wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q MUTED || state="unmuted"
+    command -v notify-send >/dev/null && notify-send -u low " Microphone" "$state" || true
+    exit 0
+fi
+
+if command -v pamixer >/dev/null; then
+    pamixer --default-source --toggle-mute
+    exit 0
+fi
+
+echo "journey-audio-input-mute: no audio controller available" >&2
+exit 1

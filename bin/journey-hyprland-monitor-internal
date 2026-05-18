@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland monitor-internal
+# journey:summary=Enable / disable the internal laptop display (eDP / LVDS / DSI)
+# journey:args=[on|off|toggle]
+# journey:examples=journey-hyprland-monitor-internal toggle
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+command -v jq      >/dev/null || exit 0
+
+action="${1:-toggle}"
+
+# Internal panel name (eDP-1, LVDS-1, DSI-1). May not be present on desktops.
+internal="$(hyprctl monitors all -j | jq -r '.[] | select(.name | test("eDP|LVDS|DSI"; "i")) | .name' | head -1)"
+[[ -z $internal ]] && exit 0
+
+is_active() {
+    hyprctl monitors -j | jq -e --arg n "$internal" '.[] | select(.name == $n)' >/dev/null
+}
+
+enable_internal() {
+    hyprctl keyword "monitor=$internal,preferred,auto,1" >/dev/null 2>&1 || true
+}
+disable_internal() {
+    hyprctl keyword "monitor=$internal,disable" >/dev/null 2>&1 || true
+}
+
+case "$action" in
+    on)     enable_internal ;;
+    off)    disable_internal ;;
+    toggle)
+        if is_active; then disable_internal; else enable_internal; fi
+        ;;
+    *)
+        echo "usage: journey-hyprland-monitor-internal [on|off|toggle]" >&2
+        exit 2
+        ;;
+esac

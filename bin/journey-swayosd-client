@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# journey:group=osd
+# journey:name=swayosd client
+# journey:summary=Thin wrapper around swayosd-client that starts the server on-demand
+# journey:args=<swayosd-client args>
+# journey:examples=journey-swayosd-client --output-volume raise
+
+set -euo pipefail
+command -v swayosd-client >/dev/null || { echo "swayosd-client not installed" >&2; exit 1; }
+
+# Start the server on first call (idempotent — second call is a noop).
+if ! pgrep -x swayosd-server >/dev/null 2>&1 && command -v swayosd-server >/dev/null; then
+    if command -v uwsm-app >/dev/null; then
+        setsid uwsm-app -- swayosd-server >/dev/null 2>&1 &
+    else
+        setsid swayosd-server >/dev/null 2>&1 &
+    fi
+    # Brief wait so the very first --output-volume isn't dropped on the floor.
+    for _ in 1 2 3 4 5; do
+        pgrep -x swayosd-server >/dev/null 2>&1 && break
+        sleep 0.1
+    done
+fi
+
+exec swayosd-client "$@"

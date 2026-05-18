@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# journey:group=system
+# journey:name=powerprofiles init
+# journey:summary=Set the initial power profile at session start
+# journey:examples=journey-powerprofiles-init
+
+set -euo pipefail
+command -v powerprofilesctl >/dev/null || exit 0
+
+# Prefer balanced; fall back to whatever is available.
+target="balanced"
+if ! powerprofilesctl list 2>/dev/null | grep -q "^* *${target}:" -E && \
+   ! powerprofilesctl list 2>/dev/null | grep -qE "^\\s*${target}:"; then
+    target="$(powerprofilesctl list 2>/dev/null | awk -F: '/:/{gsub(/[* ]/,"",$1); print $1; exit}')"
+fi
+[[ -n $target ]] && powerprofilesctl set "$target" 2>/dev/null || true

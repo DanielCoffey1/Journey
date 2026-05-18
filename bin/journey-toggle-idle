@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# journey:group=toggle
+# journey:name=toggle idle
+# journey:summary=Enable / disable hypridle (locking-on-idle and DPMS)
+# journey:examples=journey-toggle-idle
+
+set -euo pipefail
+STATE="$HOME/.local/state/journey/toggles"
+mkdir -p "$STATE"
+marker="$STATE/idle-off"
+
+if [[ -e $marker ]]; then
+    rm -f "$marker"
+    if command -v uwsm-app >/dev/null; then
+        setsid uwsm-app -- hypridle >/dev/null 2>&1 &
+    else
+        setsid hypridle >/dev/null 2>&1 &
+    fi
+    command -v notify-send >/dev/null && notify-send -u low "Idle" "Enabled" || true
+else
+    : >"$marker"
+    pkill -x hypridle 2>/dev/null || true
+    command -v notify-send >/dev/null && notify-send -u low "Idle" "Disabled" || true
+fi

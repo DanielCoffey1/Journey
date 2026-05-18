@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# journey:group=status
+# journey:name=weather status
+# journey:summary=One-line weather summary (curls wttr.in)
+# journey:examples=notify-send "$(journey-weather-status)"
+
+set -euo pipefail
+command -v curl >/dev/null || { echo "Weather unavailable (curl missing)"; exit 0; }
+
+# Honor a user-set $WEATHER_LOCATION; wttr.in geo-IP guesses otherwise.
+loc="${WEATHER_LOCATION:-}"
+url="https://wttr.in/${loc}?format=%l:+%C+%t+%w&u"
+
+out="$(curl -fsSL --max-time 4 "$url" 2>/dev/null || true)"
+if [[ -z $out ]] || [[ $out == *"Unknown location"* ]]; then
+    echo "Weather unavailable"
+    exit 0
+fi
+printf '%s\n' "$out"

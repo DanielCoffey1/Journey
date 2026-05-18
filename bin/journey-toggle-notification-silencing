@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# journey:group=toggle
+# journey:name=toggle notification-silencing
+# journey:summary=Toggle Do Not Disturb mode for notifications (mako)
+# journey:examples=journey-toggle-notification-silencing
+
+set -euo pipefail
+command -v makoctl >/dev/null || { echo "makoctl not available" >&2; exit 1; }
+
+if makoctl mode 2>/dev/null | grep -qx "do-not-disturb"; then
+    makoctl mode -r do-not-disturb
+    notify-send -u low "Notifications" "Restored" 2>/dev/null || true
+else
+    makoctl mode -a do-not-disturb
+    # The notification we'd send is itself silenced, so log to journal instead.
+    logger -t journey "notifications silenced" || true
+fi

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu share
+# journey:summary=Share files over the local network (LocalSend)
+# journey:examples=journey-menu share
+
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+if command -v localsend >/dev/null; then
+    exec "$BIN_DIR/journey-launch-or-focus" '^localsend' 'uwsm-app -- localsend'
+fi
+if command -v localsend_app >/dev/null; then
+    exec "$BIN_DIR/journey-launch-or-focus" '^localsend' 'uwsm-app -- localsend_app'
+fi
+command -v notify-send >/dev/null && notify-send -u critical " Share" "localsend not installed" || \
+    echo "journey-menu-share: localsend not installed" >&2
+exit 1

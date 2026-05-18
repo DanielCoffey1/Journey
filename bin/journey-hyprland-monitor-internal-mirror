@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland monitor-internal-mirror
+# journey:summary=Mirror the internal panel to the first external monitor (toggle)
+# journey:args=[on|off|toggle]
+# journey:examples=journey-hyprland-monitor-internal-mirror toggle
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+command -v jq      >/dev/null || exit 0
+
+action="${1:-toggle}"
+
+internal="$(hyprctl monitors all -j | jq -r '.[] | select(.name | test("eDP|LVDS|DSI"; "i")) | .name' | head -1)"
+[[ -z $internal ]] && exit 0
+external="$(hyprctl monitors -j | jq -r --arg int "$internal" '.[] | select(.name != $int) | .name' | head -1)"
+[[ -z $external ]] && exit 0
+
+stop_mirror() {
+    hyprctl keyword "monitor=$internal,preferred,auto,1" >/dev/null 2>&1 || true
+}
+start_mirror() {
+    hyprctl keyword "monitor=$internal,preferred,auto,1,mirror,$external" >/dev/null 2>&1 || true
+}
+
+is_mirroring() {
+    hyprctl monitors -j | jq -e --arg n "$internal" --arg e "$external" '
+        .[] | select(.name == $n and (.mirrorOf // "") == $e)
+    ' >/dev/null
+}
+
+case "$action" in
+    on)     start_mirror ;;
+    off)    stop_mirror ;;
+    toggle)
+        if is_mirroring; then stop_mirror; else start_mirror; fi
+        ;;
+    *)
+        echo "usage: journey-hyprland-monitor-internal-mirror [on|off|toggle]" >&2
+        exit 2
+        ;;
+esac

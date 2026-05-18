@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland window-close-all
+# journey:summary=Close every window on the current workspace
+# journey:examples=journey-hyprland-window-close-all
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+command -v jq      >/dev/null || exit 0
+
+ws="$(hyprctl activeworkspace -j | jq -r '.id')"
+[[ -z $ws ]] && exit 0
+
+# Close oldest-first so floating overlays survive long enough to draw exit animations.
+mapfile -t addrs < <(hyprctl clients -j | jq -r --argjson ws "$ws" '
+    [.[] | select(.workspace.id == $ws)] | sort_by(.focusHistoryID) | reverse | .[].address
+')
+for addr in "${addrs[@]}"; do
+    hyprctl dispatch closewindow "address:$addr" >/dev/null 2>&1 || true
+done

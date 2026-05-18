@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# journey:group=hyprland
+# journey:name=hyprland window-pop
+# journey:summary=Float the active window and pin it on top
+# journey:examples=journey-hyprland-window-pop
+
+set -euo pipefail
+command -v hyprctl >/dev/null || exit 0
+hyprctl --batch 'dispatch togglefloating active ; dispatch pin'

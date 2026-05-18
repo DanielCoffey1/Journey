@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# journey:group=menu
+# journey:name=menu reminder-set
+# journey:summary=Add a quick reminder via the launcher's input box
+# journey:examples=journey-menu reminder-set
+
+# Prompts via walker --dmenu (when in a Wayland session) — empty stdin so the
+# user types freely into the input field — and stores the text via
+# `journey-reminder add`. Falls back to `gum input` in a TTY.
+set -euo pipefail
+BIN_DIR="$(dirname "$(readlink -f "$0")")"
+
+text=""
+if [[ -n ${WAYLAND_DISPLAY:-} ]] && command -v walker >/dev/null; then
+    text="$(printf '' | "$BIN_DIR/journey-pick" --placeholder " New reminder…" --height 60 || true)"
+elif command -v gum >/dev/null; then
+    text="$(gum input --placeholder "New reminder…" || true)"
+else
+    read -rp "Reminder: " text || true
+fi
+
+text="$(printf '%s' "$text" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+[[ -z $text ]] && exit 0
+
+"$BIN_DIR/journey-reminder" add "$text"
+command -v notify-send >/dev/null && notify-send -u low " Reminder added" "$text" || true

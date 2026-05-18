@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# journey:group=capture
+# journey:name=capture screenshot
+# journey:summary=Take a region screenshot (slurp), annotate (satty), copy + save
+# journey:examples=journey-capture-screenshot
+
+set -euo pipefail
+command -v grim  >/dev/null || { command -v notify-send >/dev/null && notify-send -u critical "Screenshot" "grim not installed"; exit 1; }
+command -v slurp >/dev/null || { command -v notify-send >/dev/null && notify-send -u critical "Screenshot" "slurp not installed"; exit 1; }
+
+DEST_DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$DEST_DIR"
+stamp="$(date +'%Y-%m-%d_%H-%M-%S')"
+dest="$DEST_DIR/screenshot-$stamp.png"
+
+geom="$(slurp)" || exit 0
+tmp="$(mktemp --suffix=.png)"
+grim -g "$geom" "$tmp"
+
+if command -v satty >/dev/null; then
+    # Satty edits in place; copies the final result to wl-copy.
+    satty --filename "$tmp" --output-filename "$dest" --copy-command wl-copy --early-exit 2>/dev/null \
+        || cp "$tmp" "$dest"
+else
+    cp "$tmp" "$dest"
+    command -v wl-copy >/dev/null && wl-copy <"$dest" || true
+fi
+rm -f "$tmp"
+
+command -v notify-send >/dev/null && notify-send -u low " Screenshot" "$dest" || true

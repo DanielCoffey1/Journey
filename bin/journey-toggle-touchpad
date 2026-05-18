@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# journey:group=toggle
+# journey:name=toggle touchpad
+# journey:summary=Enable / disable the touchpad
+# journey:args=[on|off|toggle]
+# journey:examples=journey-toggle-touchpad
+
+set -euo pipefail
+command -v hyprctl >/dev/null || { echo "hyprctl required" >&2; exit 1; }
+command -v jq      >/dev/null || { echo "jq required"      >&2; exit 1; }
+
+action="${1:-toggle}"
+STATE="$HOME/.local/state/journey/toggles"
+mkdir -p "$STATE"
+marker="$STATE/touchpad-off"
+
+# Find every touchpad device.
+mapfile -t devices < <(hyprctl devices -j 2>/dev/null | jq -r '.mice[]? | select(.name | test("touchpad"; "i")) | .name')
+[[ ${#devices[@]} -eq 0 ]] && { echo "no touchpad found" >&2; exit 1; }
+
+set_state() {
+    local enabled="$1" dev
+    for dev in "${devices[@]}"; do
+        hyprctl keyword "device[$dev]:enabled" "$enabled" >/dev/null 2>&1 || true
+    done
+}
+
+case "$action" in
+    on)
+        rm -f "$marker"
+        set_state true
+        ;;
+    off)
+        : >"$marker"
+        set_state false
+        ;;
+    toggle)
+        if [[ -e $marker ]]; then
+            rm -f "$marker"
+            set_state true
+        else
+            : >"$marker"
+            set_state false
+        fi
+        ;;
+    *)
+        echo "usage: journey-toggle-touchpad [on|off|toggle]" >&2
+        exit 2
+        ;;
+esac

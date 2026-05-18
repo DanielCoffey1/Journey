@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# journey:group=brightness
+# journey:name=brightness keyboard
+# journey:summary=Adjust keyboard backlight (asusctl preferred, brightnessctl fallback)
+# journey:args=up|down|cycle
+# journey:examples=journey-brightness-keyboard up
+
+set -euo pipefail
+action="${1:?up|down|cycle}"
+
+# Prefer asusctl on ROG laptops since brightnessctl can't see RGB modes there.
+if command -v asusctl >/dev/null; then
+    case "$action" in
+        up)    asusctl -n ;;
+        down)  asusctl -p ;;
+        cycle) asusctl -k 2>/dev/null || asusctl -n ;;
+    esac
+    exit 0
+fi
+
+command -v brightnessctl >/dev/null || { echo "brightnessctl not installed" >&2; exit 1; }
+case "$action" in
+    up)    brightnessctl --device=kbd_backlight --quiet set +33% ;;
+    down)  brightnessctl --device=kbd_backlight --quiet set 33%- ;;
+    cycle)
+        max="$(brightnessctl --device=kbd_backlight max 2>/dev/null || echo 0)"
+        cur="$(brightnessctl --device=kbd_backlight get 2>/dev/null || echo 0)"
+        [[ $max -eq 0 ]] && exit 0
+        # Step through 0%, 33%, 66%, 100% and wrap.
+        steps=(0 33 66 100)
+        cur_pct=$(( cur * 100 / max ))
+        next=0
+        for i in "${!steps[@]}"; do
+            if (( cur_pct < steps[i] )); then next="${steps[i]}"; break; fi
+        done
+        brightnessctl --device=kbd_backlight --quiet set "${next}%"
+        ;;
+esac
