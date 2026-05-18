@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# journey:group=dev
+# journey:name=bundle
+# journey:summary=Package the project as a tarball for transferring to another machine
+# journey:args=[--output PATH]
+# journey:examples=journey-bundle --output ~/Downloads/journey.tar.gz
+
+# Useful for sneakernet / scp / rsync-ing Journey to a VM without standing up
+# a git remote. The tarball is self-contained: extract it and run `./install.sh`.
+
+set -euo pipefail
+
+JOURNEY_HOME="${JOURNEY_HOME:-$(dirname "$(dirname "$(readlink -f "$0")")")}"
+VERSION="$(cat "$JOURNEY_HOME/version" 2>/dev/null || echo unknown)"
+output=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --output) shift; output="${1:-}"; shift || true ;;
+        -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
+        *)
+            # Allow `--output X` AND `--output=X`
+            if [[ $arg == --output=* ]]; then output="${arg#--output=}"; fi
+            ;;
+    esac
+done
+
+[[ -n $output ]] || output="$PWD/journey-${VERSION}.tar.gz"
+
+# Exclusions: VCS, docker artifacts, the bundle dir itself, the user-side state
+exclude=(
+    --exclude='.git'
+    --exclude='.github/actions-runner'
+    --exclude='*.tar.gz'
+    --exclude='node_modules'
+)
+
+echo "==> bundling $JOURNEY_HOME → $output"
+tar -C "$(dirname "$JOURNEY_HOME")" "${exclude[@]}" \
+    -czf "$output" \
+    "$(basename "$JOURNEY_HOME")"
+
+size="$(du -h "$output" | cut -f1)"
+echo "==> $output ($size)"
+echo
+echo "Transfer to the VM, then on it:"
+echo "    tar -xzf $(basename "$output")"
+echo "    cd $(basename "$JOURNEY_HOME") && ./install.sh"

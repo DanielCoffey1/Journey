@@ -47,10 +47,8 @@ thermald
 btrfs-progs
 snapper
 
-# Boot loader (always — Limine is the Omarchy-style default)
+# Boot loader (Limine binary in repos; the AUR hooks live in aur.packages)
 limine
-limine-mkinitcpio-hook
-limine-snapper-sync
 
 # Memory (always)
 zram-generator
@@ -62,34 +60,22 @@ gtk4-layer-shell
 # JDK (kept always for IDE compatibility — comment out if you want it slim)
 jdk-openjdk
 
-# GPU drivers — auto-selected
-vulkan-intel       [intel]
-vulkan-radeon      [amd]
-vulkan-asahi       [asahi]
-intel-media-driver [intel]
-libva-intel-driver [intel]
-libvpl             [intel]
-vpl-gpu-rt         [intel]
-intel-ipu7-camera  [intel]
-intel-lpmd         [intel]
+# GPU drivers — auto-selected (official repo packages only)
+vulkan-intel         [intel]
+vulkan-radeon        [amd]
+vulkan-asahi         [asahi]
+intel-media-driver   [intel]
+libva-intel-driver   [intel]
+libvpl               [intel]
+vpl-gpu-rt           [intel]
 libva-nvidia-driver  [nvidia]
-nvidia-dkms          [nvidia]
+nvidia               [nvidia]
 nvidia-utils         [nvidia]
 lib32-nvidia-utils   [nvidia]
 
-# Hardware-specific
+# Hardware-specific official-repo entries
 broadcom-wl                                  [broadcom]
-asusctl                                      [asus]
-dell-xps-touchpad-haptics                    [dell-xps]
-macbook12-spi-driver-dkms                    [t2]
-apple-bcm-firmware                           [t2]
-apple-t2-audio-config                        [t2]
-linux-t2                                     [t2]
-linux-t2-headers                             [t2]
-t2fanrd                                      [t2]
-tiny-dfr                                     [t2]
 linux-firmware-marvell                       [surface]
-linux-ptl                                    [framework16]
-linux-ptl-headers                            [framework16]
-tuxedo-drivers-nocompatcheck-dkms            [framework16]
-yt6801-dkms                                  [framework16]
+
+# AUR-only hardware drivers (asusctl, t2, framework16, intel-ipu7-camera, etc.)
+# now live in packages/aur.packages so yay handles them with --needed.

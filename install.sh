@@ -139,7 +139,9 @@ install_packages() {
     [[ ${#base[@]} -gt 0 ]] && sudo pacman -S --needed --noconfirm "${base[@]}"
 
     log "Installing AUR packages (yay)"
-    mapfile -t aur < <(read_packages "$JOURNEY_HOME/packages/aur.packages")
+    # Same hardware-tag filtering as the pacman lists, so [t2]/[framework16]/etc.
+    # AUR entries only fire on matching hardware.
+    mapfile -t aur < <(read_packages "$JOURNEY_HOME/packages/aur.packages" "$tags")
     [[ ${#aur[@]} -gt 0 ]] && yay -S --needed --noconfirm "${aur[@]}"
 }
 

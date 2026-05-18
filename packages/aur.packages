@@ -1,14 +1,47 @@
 # Journey Companion AUR package list — installed via yay.
 # Lines starting with # are ignored. Blank lines are ignored.
+# Hardware-tagged entries (e.g. [t2]) only install when matching tags are detected.
 
-# Launcher (Walker GTK4 launcher with full Journey config support)
+# --- Launcher ---
 walker-bin
 
-# Optional proprietary apps (uncomment if you want them by default)
+# --- Apps not in official repos ---
+typora                        # markdown editor
+claude-code                   # Anthropic Claude CLI
+pinta                         # paint app
+ufw-docker                    # ufw rules for docker bridge
+xdg-terminal-exec             # standard terminal launcher
+ttf-ia-writer                 # iA Writer fonts
+yaru-icon-theme               # icon theme (Tokyo Night uses Yaru-magenta)
+tzupdate                      # automatic timezone from IP
+# Dropped because their deps conflict with the `rust` toolchain elephant requires:
+#   localsend                  (Flutter — wants rustup)
+#   python-terminaltexteffects (transitive rustup conflict)
+# Re-add manually with `journey-pkg-add` if you don't share that machine with elephant.
+
+# --- System / boot ---
+limine-mkinitcpio-hook        # rebuild limine after kernel install
+limine-snapper-sync           # snapper btrfs snapshot helper for limine
+
+# --- Hardware-specific ---
+asusctl                       [asus]
+dell-xps-touchpad-haptics     [dell-xps]
+macbook12-spi-driver-dkms     [t2]
+apple-bcm-firmware            [t2]
+apple-t2-audio-config         [t2]
+linux-t2                      [t2]
+linux-t2-headers              [t2]
+t2fanrd                       [t2]
+tiny-dfr                      [t2]
+linux-ptl                     [framework16]
+linux-ptl-headers             [framework16]
+tuxedo-drivers-nocompatcheck-dkms [framework16]
+yt6801-dkms                   [framework16]
+intel-ipu7-camera             [intel]
+intel-lpmd                    [intel]
+
+# --- Optional proprietary apps (uncomment if you want them) ---
 # 1password
 # 1password-cli
 # spotify
-# claude-code
 # cliamp
-
-# Journey doesn't fork walker or nvim — we ship pure config on top of upstream.

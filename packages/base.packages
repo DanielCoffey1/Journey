@@ -11,10 +11,8 @@ hyprlock
 hyprpicker
 hyprsunset
 hyprland-guiutils
-hyprland-preview-share-picker
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
-xdg-terminal-exec
 qt5-wayland
 qt6-wayland
 uwsm
@@ -35,15 +33,18 @@ alacritty
 foot
 
 # Editors / dev tools
-nvim
+neovim
 helix
 git
 github-cli
 lazygit
 lazydocker
-claude-code
 mise
 ruby
+# Pin `rust` (not `rustup`) — elephant (walker's data provider, pulled in by
+# walker-bin) declares depends=rust. AUR PKGBUILDs that want rustup-specific
+# features may need to be dropped or manually rebuilt; we pick rust because
+# the launcher won't work without elephant.
 rust
 clang
 llvm
@@ -51,7 +52,6 @@ luarocks
 tree-sitter-cli
 python-gobject
 python-poetry-core
-python-terminaltexteffects
 
 # CLI utilities
 fzf
@@ -99,8 +99,6 @@ signal-desktop
 obsidian
 libreoffice-fresh
 xournalpp
-pinta
-typora
 
 # Media production
 obs-studio
@@ -123,8 +121,6 @@ nss-mdns
 iwd
 impala
 ufw
-ufw-docker
-localsend
 bluetui
 
 # Printing
@@ -146,14 +142,12 @@ fcitx5-qt
 
 # Theming / fonts
 gnome-themes-extra
-yaru-icon-theme
 kvantum-qt5
 fontconfig
 noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 ttf-jetbrains-mono-nerd
-ttf-ia-writer
 woff2-font-awesome
 
 # Capture / OCR helpers
@@ -183,7 +177,5 @@ libyaml
 postgresql-libs
 mariadb-libs
 dotnet-runtime-9.0
-tzupdate
 usage
-asdcontrol
 kernel-modules-hook
