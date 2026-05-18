@@ -42,7 +42,7 @@ This README **is** the project todo list. Check items off as they ship. When you
 - [x] `default/hypr/bindings/media.conf` — volume, brightness, media keys
 - [x] `default/hypr/bindings/clipboard.conf` — universal copy/paste/cut
 - [x] `default/hypr/{input,looknfeel,envs,windows,autostart}.conf`
-- [ ] `default/hypr/apps/*.conf` — per-app window rules (1password, browser, jetbrains, steam, terminals, walker, etc.)
+- [x] `default/hypr/apps/*.conf` — 19 per-app window rule files: `1password`, `bitwarden`, `browser` (chromium/firefox tagging + video-site opacity opt-out), `davinci-resolve`, `geforce`, `hyprshot`, `jetbrains` (no-follow-mouse), `localsend`, `moonlight`, `pip` (auto-float browser PIP overlays), `qemu`, `retroarch`, `steam`, `system` (floating-window tag + media-opaque rules), `telegram` (no focus-stealing), `terminals` (uniform opacity tag), `typora`, `walker`, `webcam-overlay`. `default/hypr/apps.conf` is the master that `windows.conf` sources between the default-opacity tagging and its application — letting apps cleanly opt out
 
 ### Phase 3 — Theming
 
