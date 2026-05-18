@@ -74,8 +74,14 @@ This README **is** the project todo list. Check items off as they ship. When you
 ### Phase 5 — Hooks
 
 - [x] `bin/journey-hook` runner — `journey-hook <event>` runs all scripts under `~/.config/journey/hooks/<event>/` (and `~/.local/share/journey/hooks/<event>/`)
-- [ ] Default hook scripts shipped under `hooks/`: `post-boot`, `post-update`, `theme-set`, `battery-low`, `font-set`
-- [ ] `~/.config/journey/hooks/` layout + example/no-op scripts
+- [x] `hooks/README.md` — full contract: discovery order, ordering convention, disable-by-chmod, error semantics
+- [x] `hooks/post-boot/00-show-reminders.sh` — `journey-reminder show` on session start (early-exits when store is empty)
+- [x] `hooks/post-update/00-notify.sh` — post-update confirmation notification
+- [x] `hooks/theme-set/00-notify.sh` — confirms the new theme name (read from `current/theme.name`)
+- [x] `hooks/battery-low/00-notify.sh` — critical battery notification
+- [x] `hooks/font-set/00-restart-launcher.sh` — kicks the launcher so GTK picks up the new font
+- [x] `bin/journey-battery-watch` — small poller that fires `battery-low` once per low-battery episode (debounced via marker file); opt-in via commented `exec-once` in `autostart.conf`
+- [x] `install.sh` seeds `~/.config/journey/hooks/{post-boot,post-update,theme-set,battery-low,font-set}/` with a README
 
 ### Phase 6 — Launchers & Helpers
 

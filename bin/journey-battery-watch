@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# journey:group=system
+# journey:name=battery watch
+# journey:summary=Poll battery and fire `battery-low` hook when capacity drops below a threshold
+# journey:args=[--threshold N] [--interval SECS] [--once]
+# journey:examples=journey-battery-watch --threshold 15 --interval 60
+
+# Polls the first /sys/class/power_supply/BAT* device. Fires the `battery-low`
+# hook chain at most once per low-battery episode (cleared when the system is
+# charging or capacity rises above threshold + 5).
+#
+# To enable on session start, uncomment the matching line in autostart.conf,
+# or add to ~/.config/hypr/autostart.conf:
+#
+#   exec-once = journey-battery-watch
+set -euo pipefail
+
+threshold="${JOURNEY_BATTERY_THRESHOLD:-15}"
+interval="${JOURNEY_BATTERY_INTERVAL:-60}"
+once=0
+while (( $# > 0 )); do
+    case "$1" in
+        --threshold) threshold="$2"; shift 2 ;;
+        --interval)  interval="$2"; shift 2 ;;
+        --once)      once=1; shift ;;
+        -h|--help)   sed -n '2,12p' "$0"; exit 0 ;;
+        *)           echo "journey-battery-watch: unknown flag: $1" >&2; exit 2 ;;
+    esac
+done
+
+bat=""
+for b in /sys/class/power_supply/BAT*; do
+    [[ -d $b ]] && { bat="$b"; break; }
+done
+[[ -n $bat ]] || { echo "journey-battery-watch: no battery — exiting" >&2; exit 0; }
+
+state_file="$HOME/.local/state/journey/battery-low-fired"
+mkdir -p "$(dirname "$state_file")"
+
+check_once() {
+    local cap status
+    cap="$(<"$bat/capacity")"
+    status="$(<"$bat/status")"
+
+    if [[ $cap -le $threshold && $status == "Discharging" ]]; then
+        if [[ ! -f $state_file ]]; then
+            : >"$state_file"
+            journey-hook battery-low || true
+        fi
+    elif [[ $cap -gt $((threshold + 5)) || $status != "Discharging" ]]; then
+        rm -f "$state_file"
+    fi
+}
+
+if (( once )); then
+    check_once
+    exit 0
+fi
+
+while :; do
+    check_once
+    sleep "$interval"
+done

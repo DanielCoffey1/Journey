@@ -145,7 +145,24 @@ install_packages() {
 
 stow_configs() {
     log "Stowing default configs into ~/.config/"
-    mkdir -p "$HOME/.config" "$JOURNEY_CONFIG/current" "$JOURNEY_CONFIG/themes" "$JOURNEY_CONFIG/branding" "$JOURNEY_CONFIG/hooks"
+    mkdir -p "$HOME/.config" "$JOURNEY_CONFIG/current" "$JOURNEY_CONFIG/themes" "$JOURNEY_CONFIG/branding"
+
+    # Seed user-side hook directories so users have a discoverable place to
+    # drop their own scripts. Shipped defaults live at $JOURNEY_HOME/hooks/.
+    mkdir -p "$JOURNEY_CONFIG/hooks"
+    local event
+    for event in post-boot post-update theme-set battery-low font-set; do
+        mkdir -p "$JOURNEY_CONFIG/hooks/$event"
+    done
+    if [[ ! -f $JOURNEY_CONFIG/hooks/README.md ]]; then
+        cat >"$JOURNEY_CONFIG/hooks/README.md" <<'EOF'
+# Your hooks
+
+Drop executable scripts into the event subdirectories here. They run after the
+shipped hooks at `~/.local/share/journey/hooks/<event>/`. See that directory's
+README for the full contract.
+EOF
+    fi
 
     # Both directories and bare files under default/ get installed as
     # ~/.config/<name>. Existing user content is moved aside (not overwritten),
