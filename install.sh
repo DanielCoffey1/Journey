@@ -147,19 +147,21 @@ stow_configs() {
     log "Stowing default configs into ~/.config/"
     mkdir -p "$HOME/.config" "$JOURNEY_CONFIG/current" "$JOURNEY_CONFIG/themes" "$JOURNEY_CONFIG/branding" "$JOURNEY_CONFIG/hooks"
 
-    # Each top-level dir in default/ becomes a symlink/copy under ~/.config/<name>.
-    # Strategy: if user already has a ~/.config/<name>, back it up to <name>.pre-journey.
-    local src dst name
-    for src in "$JOURNEY_HOME"/default/*/; do
-        name="$(basename "$src")"
+    # Both directories and bare files under default/ get installed as
+    # ~/.config/<name>. Existing user content is moved aside (not overwritten),
+    # so reinstalls remain reversible.
+    local entry name dst backup
+    for entry in "$JOURNEY_HOME"/default/*; do
+        [[ -e $entry ]] || continue
+        name="$(basename "$entry")"
         dst="$HOME/.config/$name"
         if [[ -e $dst && ! -L $dst ]]; then
-            local backup="${dst}.pre-journey.$(date +%s)"
+            backup="${dst}.pre-journey.$(date +%s)"
             warn "Backing up existing $dst → $backup"
             mv "$dst" "$backup"
         fi
         rm -rf "$dst"
-        cp -a "$src" "$dst"
+        cp -a "$entry" "$dst"
     done
 }
 
@@ -185,23 +187,30 @@ EOF
     done
 
     # systemd user env — picked up by uwsm-app, hyprland exec-once, etc.
+    # JOURNEY_PATH is exported here so that config files (waybar etc.) can
+    # reference shipped scripts as `$JOURNEY_PATH/default/...`.
     mkdir -p "$HOME/.config/environment.d"
     cat >"$HOME/.config/environment.d/10-journey.conf" <<EOF
 # Added by Journey Companion installer.
 # Re-running install.sh overwrites this file.
 PATH=$JOURNEY_HOME/bin:\${PATH}
+JOURNEY_PATH=$JOURNEY_HOME
 EOF
 }
 
 apply_default_theme() {
     log "Setting default theme to tokyo-night"
     if [[ -x $JOURNEY_HOME/bin/journey-theme-set ]]; then
-        PATH="$JOURNEY_HOME/bin:$PATH" "$JOURNEY_HOME/bin/journey-theme-set" tokyo-night || warn "journey-theme-set failed (will be available once Phase 3 ships)"
+        PATH="$JOURNEY_HOME/bin:$PATH" "$JOURNEY_HOME/bin/journey-theme-set" tokyo-night || warn "journey-theme-set failed"
     else
-        # Manual fallback: symlink the theme dir
         ln -sfn "$JOURNEY_HOME/themes/tokyo-night" "$JOURNEY_CONFIG/current/theme"
         echo tokyo-night >"$JOURNEY_CONFIG/current/theme.name"
     fi
+
+    # btop reads themes only from $XDG_CONFIG_HOME/btop/themes/. Symlink the
+    # active theme's btop.theme there so theme-set "just works" for btop too.
+    mkdir -p "$HOME/.config/btop/themes"
+    ln -sfn "$JOURNEY_CONFIG/current/theme/btop.theme" "$HOME/.config/btop/themes/journey.theme"
 }
 
 enable_services() {

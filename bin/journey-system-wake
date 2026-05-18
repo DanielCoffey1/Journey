@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# journey:group=system
+# journey:name=system wake
+# journey:summary=Wake the displays after suspend (DPMS on)
+# journey:examples=journey-system-wake
+
+# hypridle's after_sleep_cmd hook calls this to make sure monitors come back.
+# A short delay lets PAM settle before we kick DPMS, which avoids the
+# occasional first-frame freeze on some Intel + nvidia hybrid setups.
+set -euo pipefail
+sleep 1
+command -v hyprctl >/dev/null && hyprctl dispatch dpms on 2>/dev/null || true

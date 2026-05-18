@@ -1,0 +1,3 @@
+# Journey-default mako entry. The active theme appends its colors via
+# theme/mako.ini, which `include`s our core defaults below.
+include=~/.config/journey/current/theme/mako.ini

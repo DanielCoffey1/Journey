@@ -129,18 +129,23 @@ This README **is** the project todo list. Check items off as they ship. When you
 
 ### Phase 8 — Application Configs
 
-- [ ] `default/waybar/{config.jsonc,style.css}`
-- [ ] `default/mako/core.ini`
-- [ ] `default/swayosd/`
-- [ ] `default/alacritty/alacritty.toml`
-- [ ] `default/ghostty/config`
-- [ ] `default/foot/foot.ini`
-- [ ] `default/btop/btop.conf`
-- [ ] `default/hypridle/config`
-- [ ] `default/hyprlock/config`
-- [ ] `default/fastfetch/config.jsonc`
-- [ ] `default/starship.toml`
-- [ ] `default/tmux/tmux.conf`
+- [x] `default/waybar/config.jsonc` + `style.css` — workspaces, clock, weather, indicators, cpu/battery/network/bluetooth/pulseaudio modules; clicks route to `journey-*`
+- [x] `default/waybar/indicators/{idle,notification-silencing,screen-recording}.sh` — JSON-emitting waybar custom-module scripts
+- [x] `default/waybar/weather.sh` — wttr.in JSON wrapper (waybar custom/weather)
+- [x] `default/mako/core.ini` + `config` — theme imports `core.ini` plus its colors
+- [x] `default/swayosd/config.toml` + `style.css`
+- [x] `default/alacritty/alacritty.toml` — JetBrains Mono Nerd, journey theme import
+- [x] `default/ghostty/config` — same conventions; `?`-prefixed theme include tolerates first-boot
+- [x] `default/foot/foot.ini`
+- [x] `default/btop/btop.conf` — uses `color_theme = "journey"`; install.sh symlinks `~/.config/btop/themes/journey.theme` → active theme's `btop.theme`
+- [x] `default/hypr/hyprlock.conf` — theme colors + background from `current/theme/`, `current/background`
+- [x] `default/hypr/hypridle.conf` — lock @5min, DPMS @10min, no auto-suspend by default
+- [x] `default/fastfetch/config.jsonc` — hardware/software boxes (no omarchy logo)
+- [x] `default/starship.toml`
+- [x] `default/tmux/tmux.conf`
+- [x] `install.sh` `stow_configs` handles bare files at the top level of `default/` (so `default/starship.toml` lands at `~/.config/starship.toml`)
+- [x] `install.sh` exports `JOURNEY_PATH` in `environment.d` (waybar uses `$JOURNEY_PATH/default/waybar/...`)
+- [x] `bin/journey-system-wake` — paired with hypridle's `after_sleep_cmd`
 
 ### Phase 9 — Package & Update Flow
 

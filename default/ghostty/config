@@ -1,0 +1,33 @@
+# Theme — sourced from active Journey theme; the leading `?` makes ghostty
+# tolerate the file being absent before first `journey-theme-set`.
+config-file = ?"~/.config/journey/current/theme/ghostty"
+
+# Font
+font-family = "JetBrainsMono Nerd Font"
+font-style = Regular
+font-size = 9
+
+# Window
+window-theme = ghostty
+window-padding-x = 14
+window-padding-y = 14
+confirm-close-surface = false
+resize-overlay = never
+gtk-toolbar-style = flat
+
+# Cursor
+cursor-style = "block"
+cursor-style-blink = false
+
+# Shell integration
+shell-integration-features = no-cursor,ssh-env
+
+# Keybinds — match alacritty/foot for muscle memory
+keybind = shift+insert=paste_from_clipboard
+keybind = control+insert=copy_to_clipboard
+
+# Slow trackpad scrolling slightly
+mouse-scroll-multiplier = 0.95
+
+# Workaround for hyprland slowness
+async-backend = epoll
