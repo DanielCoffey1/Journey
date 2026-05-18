@@ -72,6 +72,21 @@ ensure_yay() {
     rm -rf "$build"
 }
 
+# Fresh Arch installs ship with [multilib] commented out, so any lib32-*
+# package (notably lib32-nvidia-utils) fails with "target not found". Enable
+# the repo on demand and refresh the package databases.
+ensure_multilib() {
+    if grep -Eq '^\[multilib\]' /etc/pacman.conf; then return 0; fi
+    log "Enabling multilib repo in /etc/pacman.conf (needed for lib32-* packages)"
+    if grep -Eq '^#\[multilib\]' /etc/pacman.conf; then
+        sudo sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+    else
+        printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' \
+            | sudo tee -a /etc/pacman.conf >/dev/null
+    fi
+    sudo pacman -Sy
+}
+
 # Read a package list file, stripping comments and blank lines.
 # Hardware-tag filtering ([nvidia] etc.) is applied only for system.packages.
 read_packages() {
@@ -132,7 +147,12 @@ install_packages() {
 
     log "Installing system / driver packages (pacman)"
     mapfile -t sys < <(read_packages "$JOURNEY_HOME/packages/system.packages" "$tags")
-    [[ ${#sys[@]} -gt 0 ]] && sudo pacman -S --needed --noconfirm "${sys[@]}"
+    if [[ ${#sys[@]} -gt 0 ]]; then
+        if printf '%s\n' "${sys[@]}" | grep -q '^lib32-'; then
+            ensure_multilib
+        fi
+        sudo pacman -S --needed --noconfirm "${sys[@]}"
+    fi
 
     log "Installing base packages (pacman)"
     mapfile -t base < <(read_packages "$JOURNEY_HOME/packages/base.packages")
