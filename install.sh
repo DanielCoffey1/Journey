@@ -267,6 +267,38 @@ enable_services() {
             sudo systemctl enable "$svc" || true
         fi
     done
+    ensure_sddm_default_session
+}
+
+# Seed SDDM's per-user state so first login pre-selects the uwsm-managed
+# Hyprland session. Without this, fresh installs land on plain "Hyprland"
+# and every binding/autostart that calls `uwsm-app --` fails silently —
+# leaving the user staring at an unresponsive desktop.
+ensure_sddm_default_session() {
+    local session="hyprland-uwsm.desktop"
+    [[ -f /usr/share/wayland-sessions/$session ]] || {
+        warn "$session not installed; skipping SDDM default-session setup"
+        return
+    }
+    command -v sddm >/dev/null || return
+
+    log "Setting SDDM default session to Hyprland (uwsm-managed)"
+    local state=/var/lib/sddm/state.conf
+    sudo install -d -m 0755 /var/lib/sddm
+    if sudo test -f "$state" && sudo grep -q '^\[Last\]' "$state"; then
+        if sudo grep -q '^Session=' "$state"; then
+            sudo sed -i "s|^Session=.*|Session=$session|" "$state"
+        else
+            sudo sed -i "/^\[Last\]/a Session=$session" "$state"
+        fi
+        if ! sudo grep -q '^User=' "$state"; then
+            sudo sed -i "/^\[Last\]/a User=$USER" "$state"
+        fi
+    else
+        printf '[Last]\nUser=%s\nSession=%s\n' "$USER" "$session" \
+            | sudo tee "$state" >/dev/null
+    fi
+    sudo chown -R sddm:sddm /var/lib/sddm 2>/dev/null || true
 }
 
 run_post_install() {
